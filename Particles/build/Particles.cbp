@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="Particles"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/ubuntu/Scrivania/Progetti/Particles/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/ubuntu/Scrivania/Progetti/Particles/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/ubuntu/Scrivania/Progetti/Particles/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Particles">
+				<Option output="/home/ubuntu/Scrivania/Progetti/Particles/build/Particles" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/ubuntu/Scrivania/Progetti/Particles/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/assimp"/>
+					<Add directory="/usr/include/c++/6"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/6"/>
+					<Add directory="/usr/include/c++/6/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 Particles"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Particles/fast">
+				<Option output="/home/ubuntu/Scrivania/Progetti/Particles/build/Particles" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/ubuntu/Scrivania/Progetti/Particles/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/assimp"/>
+					<Add directory="/usr/include/c++/6"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/6"/>
+					<Add directory="/usr/include/c++/6/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 Particles/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/ubuntu/Scrivania/Progetti/Particles/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/include/Camera.h">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/include/Geometry.h">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/include/Mesh.h">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/include/Model.h">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/include/Shader.h">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/bigCube.frag">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/bigCube.vs">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/smallCube.frag">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/smallCube.vs">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/source/Particles.cpp">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
