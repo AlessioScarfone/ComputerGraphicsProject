@@ -28,14 +28,15 @@
 GLuint screenWidth = 1024;
 GLuint screenHeight = 800;
 
-int sphere_number = 1000;
-float range = 0.3;
+int sphere_number = 2000;
+float range = 0.29;
+float maxDimension = 1.0;
+bool moveON = false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void Do_Movement();
-float getRandomInRange();
+float getRandomInRange(float min,float max);
 
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.0f, 3.2f));
@@ -47,9 +48,7 @@ GLfloat lastFrame = 0.0f;
 // _________________________
 
 // _________ Light _________
-
-// Light attributes
-glm::vec3 lightPos(0.0f, 0.0f, 2.0f);
+glm::vec3 lightPos(0.0f, 0.0f, 1.5f);
 glm::vec3 target(0.0f, 0.0f, 10.0f);
 glm::vec3 lightDir = target - lightPos ;
 //__________________________
@@ -89,27 +88,37 @@ int main(){
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
 
+    //create starting position of spheres
+    glm::vec3 spherePos[sphere_number];
+    for(int i=0; i < sphere_number;i++){
+        float randX= getRandomInRange(-range,range);
+        float randY= getRandomInRange(-range,range);
+        float randZ= getRandomInRange(-range,range);
+//        std::cout<<i<<": "<<randX<<","<<randY<<","<<randZ<<endl;
+        spherePos[i] = glm::vec3(randX,randY,randZ);
+    }
+
 
     Shader smallCubeShader("../shaders/smallCube.vs", "../shaders/smallCube.frag");
     Shader bigCubeShader("../shaders/bigCube.vs", "../shaders/bigCube.frag");
     Shader sphereShader("../shaders/sphere.vs", "../shaders/sphere.frag");
+    Shader spotlightShader("../shaders/spotlight.vs", "../shaders/spotlight.frag");
 
-
-    // Set up vertex data (and buffer(s)) and attribute pointers
+    // Set up vertex data
     //vertex for small cube
     GLfloat vertices[] = {
         // CUBE VERTEX     , NORMAL
         //BOTTOM FACE
-        -0.3f, -0.3f, -0.3f, 0, -0.3f , 0, //0
-        -0.3f, -0.3f, 0.3f,  0, -0.3f , 0,//1
-         0.3f, -0.3f, 0.3f,  0, -0.3f , 0,//2
+        -0.3f, -0.3f, -0.3f, 0, -0.3f,0, //0
+        -0.3f, -0.3f, 0.3f,  0, -0.3f,0,//1
+         0.3f, -0.3f, 0.3f,  0, -0.3f,0,//2
 
-        0.3f, -0.3f, 0.3f,   0, -0.3f , 0,//2
-        0.3f, -0.3f, -0.3f,  0, -0.3f , 0,//3
-        -0.3f, -0.3f, -0.3f, 0, -0.3f , 0, //0
+        0.3f, -0.3f, 0.3f,   0, -0.3f,0,//2
+        0.3f, -0.3f, -0.3f,  0, -0.3f,0,//3
+        -0.3f, -0.3f, -0.3f, 0, -0.3f,0,//0
 
         //LEFT FACE
-        -0.3f, -0.3f, 0.3f,  -0.3,0,0,  //1
+        -0.3f, -0.3f, 0.3f,  -0.3,0,0,//1
         -0.3f, -0.3f, -0.3f, -0.3,0,0,//0
         -0.3f, 0.3f, -0.3f,  -0.3,0,0,//4
 
@@ -185,6 +194,10 @@ int main(){
     char pathSphere[] = "../model/sphere.obj";
     Model sphereModel(pathSphere);
 
+    char pathSpotlight[] = "../model/spotlight.obj";
+    Model spotlightModel(pathSpotlight);
+
+    //set buffers and attribute pointers
     //SMALL CUBE
     GLuint smallCubeVBO, smallCubeVAO;
     glGenVertexArrays(1, &smallCubeVAO);
@@ -235,7 +248,7 @@ int main(){
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        // ----- Draw smallCube -----
+        // ----- Draw smallCube ---------------------------------------
         smallCubeShader.Use();
         glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -254,7 +267,7 @@ int main(){
         glDepthMask(1);
         glBindVertexArray(0);
 
-        // ------- Draw big cube (use lines) ------
+        // ------- Draw big cube (use lines) ---------------------------
         bigCubeShader.Use();
 
         glUniformMatrix4fv(glGetUniformLocation(bigCubeShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -269,7 +282,19 @@ int main(){
         glDrawArrays(GL_LINES, 0, 36);
         glBindVertexArray(0);
 
-        // ------- Draw Sphere -------------
+        // ------- Draw SpotLight -------------------------------------
+        spotlightShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glm::mat4 modelSpotlight;
+        dim = 0.05f;
+        modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
+        modelSpotlight =glm::scale(modelSpotlight, glm::vec3(dim, dim, dim));
+        glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSpotlight));
+
+        spotlightModel.Draw(sphereShader);
+
+        // ------- Draw Sphere ---------------------------------------
         sphereShader.Use();
         glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -281,8 +306,8 @@ int main(){
         lightDir = target - lightPos;
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.position"), lightPos.x, lightPos.y, lightPos.z);
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.direction"), -lightPos.x, -lightPos.y, -lightPos.z);
-        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(25.5f)));
-        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(30.5f)));
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(20.0f)));
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(25.0f)));
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.ambient"),   0.5f, 0.5f, 0.5f);
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
@@ -299,13 +324,19 @@ int main(){
         for(int i=0; i < sphere_number;i++){
             glm::mat4 modelSphere;
             dim = 0.01;
-            float randX= getRandomInRange();
-            float randY= getRandomInRange();
-            float randZ= getRandomInRange();
-            modelSphere = glm::translate(modelSphere, glm::vec3(randX,randY,randZ));
+            modelSphere = glm::translate(modelSphere, spherePos[i]);
             modelSphere =glm::scale(modelSphere, glm::vec3(dim, dim, dim));
             glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSphere));
             sphereModel.Draw(sphereShader);
+
+            //move spheres
+            if(moveON){
+                glm::vec3 move(getRandomInRange(-0.01f, 0.01f), getRandomInRange(-0.01f, 0.01f), getRandomInRange(-0.01f, 0.01f));
+                spherePos[i] += move;
+                if((spherePos[i].x >= maxDimension && spherePos[i].x <= -maxDimension) || (spherePos[i].y >= maxDimension && spherePos[i].y <= -maxDimension)
+                        || (spherePos[i].z >= maxDimension && spherePos[i].z <= -maxDimension))
+                    spherePos[i] -= move;
+            }
 
         }
 
@@ -349,6 +380,11 @@ void Do_Movement()
         camera.ProcessKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    //-----------------
+    if(keys[GLFW_KEY_X])
+            moveON=true;
+    if(keys[GLFW_KEY_Z])
+            moveON=false;
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -368,8 +404,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-float getRandomInRange(){
-    float random = ((float) rand()/ (float) RAND_MAX/(range*2)); //extract a random in [0,range*2]
-    return random - range; // put random in [-range,+range]
+float getRandomInRange(float min,float max){
+        float random = ((float) rand()/ (float) RAND_MAX);
+        float diff = max - min;
+        return (random * diff) + (min);
+
 }
 

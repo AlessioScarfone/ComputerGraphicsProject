@@ -41,7 +41,7 @@ class Shader
         }
       catch (std::ifstream::failure e)
         {
-	  std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+      std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
         }
       const GLchar* vShaderCode = vertexCode.c_str();
       const GLchar * fShaderCode = fragmentCode.c_str();
@@ -58,7 +58,7 @@ class Shader
       if (!success)
         {
 	  glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-	  std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+      std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
         }
       // Fragment Shader
       fragment = glCreateShader(GL_FRAGMENT_SHADER);
