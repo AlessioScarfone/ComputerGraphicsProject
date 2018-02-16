@@ -113,6 +113,12 @@
 		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/smallCube.vs">
 			<Option target="Particles"/>
 		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/sphere.frag">
+			<Option target="Particles"/>
+		</Unit>
+		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/shaders/sphere.vs">
+			<Option target="Particles"/>
+		</Unit>
 		<Unit filename="/home/ubuntu/Scrivania/Progetti/Particles/source/Particles.cpp">
 			<Option target="Particles"/>
 		</Unit>

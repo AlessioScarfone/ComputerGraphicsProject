@@ -25,22 +25,34 @@
 #include <SOIL/SOIL.h>
 
 
-GLuint screenWidth = 800;
-GLuint screenHeight = 600;
+GLuint screenWidth = 1024;
+GLuint screenHeight = 800;
+
+int sphere_number = 1000;
+float range = 0.3;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void Do_Movement();
+float getRandomInRange();
 
 // _________Camera _________
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 3.2f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 // _________________________
+
+// _________ Light _________
+
+// Light attributes
+glm::vec3 lightPos(0.0f, 0.0f, 2.0f);
+glm::vec3 target(0.0f, 0.0f, 10.0f);
+glm::vec3 lightDir = target - lightPos ;
+//__________________________
 
 
 int main(){
@@ -78,122 +90,128 @@ int main(){
     glfwSetCursorPosCallback(window, mouse_callback);
 
 
-    Shader smallCube("../shaders/smallCube.vs", "../shaders/smallCube.frag");
-    Shader bigCube("../shaders/bigCube.vs", "../shaders/bigCube.frag");
+    Shader smallCubeShader("../shaders/smallCube.vs", "../shaders/smallCube.frag");
+    Shader bigCubeShader("../shaders/bigCube.vs", "../shaders/bigCube.frag");
+    Shader sphereShader("../shaders/sphere.vs", "../shaders/sphere.frag");
 
 
     // Set up vertex data (and buffer(s)) and attribute pointers
-      GLfloat vertices[] = {
-           //BOTTOM FACE
-          -0.5f, -0.5f, -0.5f,  //0
-          -0.5f, -0.5f, 0.5f,   //1
-           0.5f, -0.5f, 0.5f,   //2
+    //vertex for small cube
+    GLfloat vertices[] = {
+        // CUBE VERTEX     , NORMAL
+        //BOTTOM FACE
+        -0.3f, -0.3f, -0.3f, 0, -0.3f , 0, //0
+        -0.3f, -0.3f, 0.3f,  0, -0.3f , 0,//1
+         0.3f, -0.3f, 0.3f,  0, -0.3f , 0,//2
 
-          0.5f, -0.5f, 0.5f,   //2
-          0.5f, -0.5f, -0.5f,  //3
-          -0.5f, -0.5f, -0.5f,  //0
+        0.3f, -0.3f, 0.3f,   0, -0.3f , 0,//2
+        0.3f, -0.3f, -0.3f,  0, -0.3f , 0,//3
+        -0.3f, -0.3f, -0.3f, 0, -0.3f , 0, //0
 
-          //LEFT FACE
-          -0.5f, -0.5f, 0.5f,  //1
-          -0.5f, -0.5f, -0.5f, //0
-          -0.5f, 0.5f, -0.5f,  //4
+        //LEFT FACE
+        -0.3f, -0.3f, 0.3f,  -0.3,0,0,  //1
+        -0.3f, -0.3f, -0.3f, -0.3,0,0,//0
+        -0.3f, 0.3f, -0.3f,  -0.3,0,0,//4
 
-          -0.5f, 0.5f, -0.5f,  //4
-          -0.5f, 0.5f, 0.5f,   //5
-          -0.5f, -0.5f, 0.5f,  //1
+        -0.3f, 0.3f, -0.3f,  -0.3,0,0,//4
+        -0.3f, 0.3f, 0.3f,   -0.3,0,0,//5
+        -0.3f, -0.3f, 0.3f,  -0.3,0,0,//1
 
-          //RIGHT FACE
-          0.5f, -0.5f, 0.5f,    //2
-          0.5f, 0.5f, -0.5f,    //6
-          0.5f, -0.5f, -0.5f,   //3
+        //RIGHT FACE
+        0.3f, -0.3f, 0.3f,   0.3,0,0,//2
+        0.3f, 0.3f, -0.3f,   0.3,0,0,//6
+        0.3f, -0.3f, -0.3f,  0.3,0,0,//3
 
-          0.5f, 0.5f, -0.5f,    //6
-          0.5f, 0.5f, 0.5f,     //7
-          0.5f, -0.5f, 0.5f,    //2
+        0.3f, 0.3f, -0.3f,   0.3,0,0,//6
+        0.3f, 0.3f, 0.3f,    0.3,0,0,//7
+        0.3f, -0.3f, 0.3f,   0.3,0,0,//2
 
-          //TOP FACE
-          0.5f, 0.5f, -0.5f,    //6
-          -0.5f, 0.5f, -0.5f,  //4
-          -0.5f, 0.5f, 0.5f,   //5
+        //TOP FACE
+        0.3f, 0.3f, -0.3f,   0,0.3,0,//6
+        -0.3f, 0.3f, -0.3f,  0,0.3,0,//4
+        -0.3f, 0.3f, 0.3f,   0,0.3,0,//5
 
-          -0.5f, 0.5f, 0.5f,   //5
-          0.5f, 0.5f, 0.5f,     //7
-          0.5f, 0.5f, -0.5f,    //6
+        -0.3f, 0.3f, 0.3f,   0,0.3,0,//5
+        0.3f, 0.3f, 0.3f,    0,0.3,0,//7
+        0.3f, 0.3f, -0.3f,   0,0.3,0,//6
 
-          //FRONT FACE
-          -0.5f, -0.5f, 0.5f,   //1
-          -0.5f, 0.5f, 0.5f,   //5
-          0.5f, 0.5f, 0.5f,   //7
+        //FRONT FACE
+        -0.3f, -0.3f, 0.3f,  0,0,0.3,//1
+        -0.3f, 0.3f, 0.3f,   0,0,0.3,//5
+        0.3f, 0.3f, 0.3f,    0,0,0.3,//7
 
-          0.5f, 0.5f, 0.5f,   //7
-          0.5f, -0.5f, 0.5f,   //2
-          -0.5f, -0.5f, 0.5f,   //1
+        0.3f, 0.3f, 0.3f,    0,0,0.3,//7
+        0.3f, -0.3f, 0.3f,   0,0,0.3,//2
+        -0.3f, -0.3f, 0.3f,  0,0,0.3,//1
 
-          //FAR FACE
-          -0.5f, -0.5f, -0.5f,   //0
-          -0.5f, 0.5f, -0.5f,   //4
-          0.5f, 0.5f, -0.5f,   //6
+        //FAR FACE
+        -0.3f, -0.3f, -0.3f, 0,0,-0.3,//0
+        -0.3f, 0.3f, -0.3f,  0,0,-0.3,//4
+        0.3f, 0.3f, -0.3f,   0,0,-0.3,//6
 
-          0.5f, 0.5f, -0.5f,   //6
-          0.5f, -0.5f, -0.5f,   //3
-          -0.5f, -0.5f, -0.5f,   //0
-      };
+        0.3f, 0.3f, -0.3f,   0,0,-0.3,//6
+        0.3f, -0.3f, -0.3f,  0,0,-0.3,//3
+        -0.3f, -0.3f, -0.3f, 0,0,-0.3,//0
+    };
+    //vertex for big cube
+    GLfloat lines[] = {
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f
+    };
 
-      GLfloat lines[] = {
-          -1.0f,  1.0f,  1.0f,
-          1.0f,  1.0f,  1.0f,
-          1.0f,  1.0f,  1.0f,
-          1.0f, -1.0f,  1.0f,
-          1.0f, -1.0f,  1.0f,
-          -1.0f, -1.0f,  1.0f,
-          -1.0f, -1.0f,  1.0f,
-          -1.0f,  1.0f,  1.0f,
-          -1.0f, -1.0f,  1.0f,
-          -1.0f, -1.0f, -1.0f,
-          -1.0f, -1.0f, -1.0f,
-          -1.0f,  1.0f, -1.0f,
-          -1.0f,  1.0f, -1.0f,
-          -1.0f,  1.0f,  1.0f,
-          -1.0f,  1.0f, -1.0f,
-          1.0f,  1.0f, -1.0f,
-          1.0f,  1.0f, -1.0f,
-          1.0f,  1.0f,  1.0f,
-          -1.0f, -1.0f, -1.0f,
-          1.0f, -1.0f, -1.0f,
-          1.0f, -1.0f, -1.0f,
-          1.0f, -1.0f,  1.0f,
-          1.0f, -1.0f, -1.0f,
-          1.0f,  1.0f, -1.0f
+    //Model Load
+    char pathSphere[] = "../model/sphere.obj";
+    Model sphereModel(pathSphere);
 
-      };
+    //SMALL CUBE
+    GLuint smallCubeVBO, smallCubeVAO;
+    glGenVertexArrays(1, &smallCubeVAO);
+    glGenBuffers(1, &smallCubeVBO);
 
-      //SMALL CUBE
-      GLuint smallCubeVBO, smallCubeVAO;
-      glGenVertexArrays(1, &smallCubeVAO);
-      glGenBuffers(1, &smallCubeVBO);
+    glBindVertexArray(smallCubeVAO);
 
-      glBindVertexArray(smallCubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, smallCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-      glBindBuffer(GL_ARRAY_BUFFER, smallCubeVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0); // Unbind VAO
 
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-      glEnableVertexAttribArray(0);
-      glBindVertexArray(0); // Unbind VAO
+    //BIG CUBE
+    GLuint bigCubeVBO, bigCubeVAO;
+    glGenVertexArrays(1, &bigCubeVAO);
+    glGenBuffers(1, &bigCubeVBO);
 
-      //BIG CUBE
-      GLuint bigCubeVBO, bigCubeVAO;
-      glGenVertexArrays(1, &bigCubeVAO);
-      glGenBuffers(1, &bigCubeVBO);
+    glBindVertexArray(bigCubeVAO);
 
-      glBindVertexArray(bigCubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, bigCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lines), lines, GL_STATIC_DRAW);
 
-      glBindBuffer(GL_ARRAY_BUFFER, bigCubeVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(lines), lines, GL_STATIC_DRAW);
-
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-      glEnableVertexAttribArray(0);
-      glBindVertexArray(0); // Unbind VAO
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0); // Unbind VAO
 
 
 
@@ -217,15 +235,14 @@ int main(){
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        //Draw smallCube
-        smallCube.Use();
-        glUniformMatrix4fv(glGetUniformLocation(smallCube.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(smallCube.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        // ----- Draw smallCube -----
+        smallCubeShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 modelSmallCube;
-        float dim = 0.6;
-        modelSmallCube =glm::scale(modelSmallCube, glm::vec3(dim, dim, dim));
-        glUniformMatrix4fv(glGetUniformLocation(smallCube.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSmallCube));
+        modelSmallCube = glm::translate(modelSmallCube, glm::vec3(0.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSmallCube));
 
         glBindVertexArray(smallCubeVAO);
         //active trasparency
@@ -237,20 +254,60 @@ int main(){
         glDepthMask(1);
         glBindVertexArray(0);
 
-        //Draw big cube (use lines)
-        bigCube.Use();
+        // ------- Draw big cube (use lines) ------
+        bigCubeShader.Use();
 
-        glUniformMatrix4fv(glGetUniformLocation(bigCube.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(bigCube.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(bigCubeShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(bigCubeShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 modelBigCube;
-        modelBigCube = glm::translate(modelBigCube, glm::vec3(0.0f, 0.0f, 0.0f));
-        glUniformMatrix4fv(glGetUniformLocation(bigCube.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelBigCube));
+        float dim = 1;
+        modelBigCube = glm::scale(modelBigCube, glm::vec3(dim, dim, dim));
+        glUniformMatrix4fv(glGetUniformLocation(bigCubeShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelBigCube));
 
         glBindVertexArray(bigCubeVAO);
         glDrawArrays(GL_LINES, 0, 36);
         glBindVertexArray(0);
 
+        // ------- Draw Sphere -------------
+        sphereShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "viewPos"),camera.Position.x, camera.Position.y, camera.Position.z);
+        //sphere color
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "sphereColor"), 0.4f, 0.8f, 0.9f);
+        //setting light of the sphere
+        lightDir = target - lightPos;
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.position"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.direction"), -lightPos.x, -lightPos.y, -lightPos.z);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(25.5f)));
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(30.5f)));
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.ambient"),   0.5f, 0.5f, 0.5f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.constant"),  1.0f);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.linear"),    0.09);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.quadratic"), 0.032);
+
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.ambient"),   0.4f, 0.4f, 0.4f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.diffuse"),   0.7f, 0.7f, 0.7f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.specular"),  1.0f, 1.0f, 1.0f); // Specular doesn't have full effect on this object's material
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "material.shininess"), 32.0f);
+
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        for(int i=0; i < sphere_number;i++){
+            glm::mat4 modelSphere;
+            dim = 0.01;
+            float randX= getRandomInRange();
+            float randY= getRandomInRange();
+            float randZ= getRandomInRange();
+            modelSphere = glm::translate(modelSphere, glm::vec3(randX,randY,randZ));
+            modelSphere =glm::scale(modelSphere, glm::vec3(dim, dim, dim));
+            glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSphere));
+            sphereModel.Draw(sphereShader);
+
+        }
 
         // Swap the screen buffer
         glfwSwapBuffers(window);
@@ -309,5 +366,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+float getRandomInRange(){
+    float random = ((float) rand()/ (float) RAND_MAX/(range*2)); //extract a random in [0,range*2]
+    return random - range; // put random in [-range,+range]
 }
 
