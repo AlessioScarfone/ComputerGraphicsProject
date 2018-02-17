@@ -32,6 +32,7 @@ int sphere_number = 2000;
 float range = 0.29;
 float maxDimension = 1.0;
 bool moveON = false;
+bool rotationON=false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -290,11 +291,16 @@ int main(){
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glm::mat4 modelSpotlight;
-        modelSpotlight = glm::rotate(modelSpotlight, rotationY, glm::vec3(0.0, 1.0, 0.0));
-        modelSpotlight = glm::rotate(modelSpotlight, rotationX, glm::vec3(1.0, 0.0, 0.0));
-        lightPos = glm::vec4(lightPos,1.0f) * modelSpotlight;
-        target = glm::vec4(target,1.0f) * modelSpotlight;
         dim = 0.05f;
+        if(rotationON){
+            modelSpotlight = glm::rotate(modelSpotlight, rotationY, glm::vec3(0.0, 1.0, 0.0));
+//            modelSpotlight = glm::rotate(modelSpotlight, rotationX, glm::vec3(1.0, 0.0, 0.0));
+            lightPos = glm::vec4(lightPos,1.0f) * modelSpotlight;
+            target = glm::vec4(target,1.0f) * modelSpotlight;
+            rotationON=false;
+            rotationY=0;
+            rotationX=0;
+        }
         modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
         modelSpotlight =glm::scale(modelSpotlight, glm::vec3(dim, dim, dim));
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSpotlight));
@@ -353,6 +359,8 @@ int main(){
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &smallCubeVAO);
     glDeleteBuffers(1, &smallCubeVBO);
+    glDeleteVertexArrays(1, &bigCubeVAO);
+    glDeleteBuffers(1, &bigCubeVBO);
 
     //EXIT LOOOP
     glfwTerminate();
@@ -375,12 +383,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-void debugLightPrint(){
-            std::cout<<"LIGHT DIR:"<<"("<<lightDir.x<<","<<lightDir.y<<","<<lightDir.z<<")"<<endl;
-            std::cout<<"LIGHT POS:"<<"("<<lightPos.x<<","<<lightPos.y<<","<<lightPos.z<<")"<<endl;
-            std::cout<<"TARGET:"<<"("<<target.x<<","<<target.y<<","<<target.z<<")"<<endl;
-            std::cout<<"_________________________________________________________________________"<<endl;
-}
+//void debugLightPrint(){
+//            std::cout<<"LIGHT DIR:"<<"("<<lightDir.x<<","<<lightDir.y<<","<<lightDir.z<<")"<<endl;
+//            std::cout<<"LIGHT POS:"<<"("<<lightPos.x<<","<<lightPos.y<<","<<lightPos.z<<")"<<endl;
+//            std::cout<<"TARGET:"<<"("<<target.x<<","<<target.y<<","<<target.z<<")"<<endl;
+//            std::cout<<"_________________________________________________________________________"<<endl;
+//}
 
 void Do_Movement()
 {
@@ -393,26 +401,40 @@ void Do_Movement()
         camera.ProcessKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
-    //-----------------
+    //---------Active Particles--------
     if(keys[GLFW_KEY_X])
             moveON=true;
     if(keys[GLFW_KEY_Z])
             moveON=false;
-    //------Light controll -------
+    //------Light controll ------------
+    //rotation up and down
+//    if(keys[GLFW_KEY_UP]){
+//        rotationON = true;
+//        rotationX+=deltaTime;
+//    }
+//    if(keys[GLFW_KEY_DOWN]){
+//        rotationON = true;
+//        rotationX-=deltaTime;
+//    }
+
     if(keys[GLFW_KEY_UP]){
-        rotationX+=-deltaTime;
+        lightPos.y += 0.01f;
+        target.y += 0.01f;
     }
     if(keys[GLFW_KEY_DOWN]){
-        rotationX-=deltaTime;
+        lightPos.y -= 0.01f;
+        target.y -= 0.01f;
     }
+    //rotation around the cube
     if(keys[GLFW_KEY_LEFT]){
-//        debugLightPrint();
-        rotationY-=deltaTime;
-    }
-    if(keys[GLFW_KEY_RIGHT]){
-//        debugLightPrint();
+        rotationON = true;
         rotationY+=deltaTime;
     }
+    if(keys[GLFW_KEY_RIGHT]){
+        rotationON = true;
+        rotationY-=deltaTime;
+    }
+
     if(keys[GLFW_KEY_LEFT_SHIFT]){
         lightPos.z += 0.01f;
         target.z += 0.01f;
@@ -444,6 +466,5 @@ float getRandomInRange(float min,float max){
         float random = ((float) rand()/ (float) RAND_MAX);
         float diff = max - min;
         return (random * diff) + (min);
-
 }
 
