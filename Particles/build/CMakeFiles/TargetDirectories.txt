@@ -1,3 +1,0 @@
-/home/ubuntu/Scrivania/Progetti/Particles/build/CMakeFiles/edit_cache.dir
-/home/ubuntu/Scrivania/Progetti/Particles/build/CMakeFiles/rebuild_cache.dir
-/home/ubuntu/Scrivania/Progetti/Particles/build/CMakeFiles/Particles.dir

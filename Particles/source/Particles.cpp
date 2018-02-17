@@ -49,8 +49,11 @@ GLfloat lastFrame = 0.0f;
 
 // _________ Light _________
 glm::vec3 lightPos(0.0f, 0.0f, 1.5f);
-glm::vec3 target(0.0f, 0.0f, 10.0f);
-glm::vec3 lightDir = target - lightPos ;
+glm::vec3 target(0.0f, 0.0f, -10.0f);
+glm::vec3 lightDir =  target - lightPos   ;
+
+GLfloat rotationY=0.0f;
+GLfloat rotationX=0.0f;
 //__________________________
 
 
@@ -287,6 +290,10 @@ int main(){
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glm::mat4 modelSpotlight;
+        modelSpotlight = glm::rotate(modelSpotlight, rotationY, glm::vec3(0.0, 1.0, 0.0));
+        modelSpotlight = glm::rotate(modelSpotlight, rotationX, glm::vec3(1.0, 0.0, 0.0));
+        lightPos = glm::vec4(lightPos,1.0f) * modelSpotlight;
+        target = glm::vec4(target,1.0f) * modelSpotlight;
         dim = 0.05f;
         modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
         modelSpotlight =glm::scale(modelSpotlight, glm::vec3(dim, dim, dim));
@@ -303,11 +310,11 @@ int main(){
         //sphere color
         glUniform3f(glGetUniformLocation(sphereShader.Program, "sphereColor"), 0.4f, 0.8f, 0.9f);
         //setting light of the sphere
-        lightDir = target - lightPos;
+        lightDir = target - lightPos ;
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.position"), lightPos.x, lightPos.y, lightPos.z);
-        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.direction"), -lightPos.x, -lightPos.y, -lightPos.z);
-        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(20.0f)));
-        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(25.0f)));
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.direction"), lightDir.x, lightDir.y, lightDir.z);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(25.0f)));
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(30.0f)));
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.ambient"),   0.5f, 0.5f, 0.5f);
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
         glUniform3f(glGetUniformLocation(sphereShader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
@@ -337,7 +344,6 @@ int main(){
                         || (spherePos[i].z >= maxDimension && spherePos[i].z <= -maxDimension))
                     spherePos[i] -= move;
             }
-
         }
 
         // Swap the screen buffer
@@ -369,6 +375,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
+void debugLightPrint(){
+            std::cout<<"LIGHT DIR:"<<"("<<lightDir.x<<","<<lightDir.y<<","<<lightDir.z<<")"<<endl;
+            std::cout<<"LIGHT POS:"<<"("<<lightPos.x<<","<<lightPos.y<<","<<lightPos.z<<")"<<endl;
+            std::cout<<"TARGET:"<<"("<<target.x<<","<<target.y<<","<<target.z<<")"<<endl;
+            std::cout<<"_________________________________________________________________________"<<endl;
+}
+
 void Do_Movement()
 {
     // Camera controls
@@ -385,6 +398,29 @@ void Do_Movement()
             moveON=true;
     if(keys[GLFW_KEY_Z])
             moveON=false;
+    //------Light controll -------
+    if(keys[GLFW_KEY_UP]){
+        rotationX+=-deltaTime;
+    }
+    if(keys[GLFW_KEY_DOWN]){
+        rotationX-=deltaTime;
+    }
+    if(keys[GLFW_KEY_LEFT]){
+//        debugLightPrint();
+        rotationY-=deltaTime;
+    }
+    if(keys[GLFW_KEY_RIGHT]){
+//        debugLightPrint();
+        rotationY+=deltaTime;
+    }
+    if(keys[GLFW_KEY_LEFT_SHIFT]){
+        lightPos.z += 0.01f;
+        target.z += 0.01f;
+    }
+    if(keys[GLFW_KEY_LEFT_CONTROL]){
+        lightPos.z -= 0.01f;
+        target.z -= 0.01f;
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)

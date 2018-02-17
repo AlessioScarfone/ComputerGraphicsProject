@@ -1,1 +1,0 @@
-/usr/bin/g++      CMakeFiles/Particles.dir/source/Particles.cpp.o  -o Particles -rdynamic -lassimp -lglfw -lGLEW -lGLU -lGL -lm -Wl,-Bstatic -lSOIL -Wl,-Bdynamic 
