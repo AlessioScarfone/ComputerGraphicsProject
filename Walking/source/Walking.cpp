@@ -33,7 +33,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
 // _________Camera _________
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.4f, 3.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -80,15 +80,18 @@ int main(){
     Shader floorShader("../shaders/floor.vs", "../shaders/floor.frag");
 
     GLfloat floor_vertices[] = {
-        //  VERTEX         , NORMAL
-        -1.0f, -0.3f, -1.0f, 0, 1.0f, 0,
-        -1.0f, -0.3f, 1.0f,  0, 1.0f, 0,
-         1.0f, -0.3f, 1.0f,  0, 1.0f, 0,
+        //  VERTEX         , Texture Coords
+        -1.0f, 0.0f, -1.0f,  0.0f, 1.0f,
+        -1.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+         1.0f, 0.0f, 1.0f,   1.0f, 0.0f,
 
-         1.0f, -0.3f, 1.0f,  0, 1.0f,0,
-         1.0f, -0.3f, -1.0f, 0, 1.0f,0,
-        -1.0f, -0.3f, -1.0f, 0, 1.0f,0,
+         1.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+         1.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+        -1.0f, 0.0f, -1.0f, 0.0f, 1.0f,
+
+
     };
+    // Set up vertex data (and buffer(s)) and attribute pointers ---> FLOOR
     GLuint floorVBO, floorVAO;
     glGenVertexArrays(1, &floorVAO);
     glGenBuffers(1, &floorVBO);
@@ -96,10 +99,32 @@ int main(){
 
     glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), floor_vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+     // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
+    // TexCoord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+
     glBindVertexArray(0); // Unbind VAO
+
+    // Load and create a floor texture
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // All upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // Set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Load image, create texture and generate mipmaps
+    int width, height;
+    unsigned char* image = SOIL_load_image("../textures/floor_texture.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(image);
+    glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
 
     // checks at the start of each loop iteration if GLFW
@@ -120,12 +145,15 @@ int main(){
         glm::mat4 view = camera.GetViewMatrix();
 
         //------ Draw Floor -------
+        // Bind Texture
+        glBindTexture(GL_TEXTURE_2D, texture);
+
         floorShader.Use();
         glUniformMatrix4fv(glGetUniformLocation(floorShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(floorShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 modelFloor;
-        GLfloat dim = 5;
+        GLfloat dim = 10;
         modelFloor = glm::scale(modelFloor, glm::vec3(dim, dim, dim));
         glUniformMatrix4fv(glGetUniformLocation(floorShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelFloor));
         glBindVertexArray(floorVAO);
