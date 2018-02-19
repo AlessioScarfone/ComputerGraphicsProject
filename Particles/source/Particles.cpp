@@ -30,13 +30,14 @@ GLuint screenHeight = 800;
 
 int sphere_number = 2000;
 float range = 0.29;
-float maxDimension = 1.0;
+GLfloat maxDimension = 0.95f;
 bool moveON = false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 float getRandomInRange(float min,float max);
+void checkposition(glm::vec3 &spherePos, GLfloat move);
 
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.0f, 3.2f));
@@ -346,11 +347,10 @@ int main(){
 
             //move spheres
             if(moveON){
-                glm::vec3 move(getRandomInRange(-0.01f, 0.01f), getRandomInRange(-0.01f, 0.01f), getRandomInRange(-0.01f, 0.01f));
+                GLfloat particle_speed=0.01f;
+                glm::vec3 move(getRandomInRange(-particle_speed, particle_speed), getRandomInRange(-particle_speed, particle_speed), getRandomInRange(-particle_speed, particle_speed));
                 spherePos[i] += move;
-                if((spherePos[i].x >= maxDimension && spherePos[i].x <= -maxDimension) || (spherePos[i].y >= maxDimension && spherePos[i].y <= -maxDimension)
-                        || (spherePos[i].z >= maxDimension && spherePos[i].z <= -maxDimension))
-                    spherePos[i] -= move;
+                checkposition(spherePos[i],particle_speed);
             }
         }
 
@@ -367,6 +367,25 @@ int main(){
     //EXIT LOOOP
     glfwTerminate();
     return 0;
+}
+
+void checkposition(glm::vec3 &spherePos, GLfloat move){
+    move=move*2;
+    if(spherePos.x >= maxDimension)
+        spherePos.x -= move;
+    else if(spherePos.x <= -maxDimension)
+        spherePos.x += move;
+
+    if(spherePos.y >= maxDimension)
+        spherePos.y -= move;
+    else if(spherePos.y <= -maxDimension)
+        spherePos.y += move;
+
+    if(spherePos.z >= maxDimension)
+        spherePos.z -= move;
+    else if(spherePos.z <= -maxDimension)
+        spherePos.z += move;
+
 }
 
 
@@ -440,14 +459,14 @@ void Do_Movement()
         lamp_self_rotate+=deltaTime;
     }
 
-    if(keys[GLFW_KEY_LEFT_SHIFT]){
-        lightPos.z += 0.01f;
-        target.z += 0.01f;
-    }
-    if(keys[GLFW_KEY_LEFT_CONTROL]){
-        lightPos.z -= 0.01f;
-        target.z -= 0.01f;
-    }
+//    if(keys[GLFW_KEY_LEFT_SHIFT]){
+//        lightPos.z += 0.01f;
+//        target.z += 0.01f;
+//    }
+//    if(keys[GLFW_KEY_LEFT_CONTROL]){
+//        lightPos.z -= 0.01f;
+//        target.z -= 0.01f;
+//    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
