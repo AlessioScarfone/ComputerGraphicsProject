@@ -32,7 +32,6 @@ int sphere_number = 2000;
 float range = 0.29;
 float maxDimension = 1.0;
 bool moveON = false;
-bool rotationON=false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -53,8 +52,10 @@ glm::vec3 lightPos(0.0f, 0.0f, 1.5f);
 glm::vec3 target(0.0f, 0.0f, -10.0f);
 glm::vec3 lightDir =  target - lightPos   ;
 
+bool rotationON=false;
 GLfloat rotationY=0.0f;
 GLfloat rotationX=0.0f;
+GLfloat lamp_self_rotate=0.0f;
 //__________________________
 
 
@@ -297,11 +298,12 @@ int main(){
 //            modelSpotlight = glm::rotate(modelSpotlight, rotationX, glm::vec3(1.0, 0.0, 0.0));
             lightPos = glm::vec4(lightPos,1.0f) * modelSpotlight;
             target = glm::vec4(target,1.0f) * modelSpotlight;
-            rotationON=false;
             rotationY=0;
             rotationX=0;
+            rotationON=false;
         }
         modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
+        modelSpotlight = glm::rotate(modelSpotlight, lamp_self_rotate, glm::vec3(0.0, 1.0, 0.0));
         modelSpotlight =glm::scale(modelSpotlight, glm::vec3(dim, dim, dim));
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSpotlight));
 
@@ -429,10 +431,13 @@ void Do_Movement()
     if(keys[GLFW_KEY_LEFT]){
         rotationON = true;
         rotationY+=deltaTime;
+        lamp_self_rotate-=deltaTime;
+
     }
     if(keys[GLFW_KEY_RIGHT]){
         rotationON = true;
         rotationY-=deltaTime;
+        lamp_self_rotate+=deltaTime;
     }
 
     if(keys[GLFW_KEY_LEFT_SHIFT]){
