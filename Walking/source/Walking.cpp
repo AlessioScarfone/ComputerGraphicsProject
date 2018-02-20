@@ -31,6 +31,7 @@ GLuint screenHeight = 800;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
+bool detectCollision(glm::vec3 object, float rag);
 
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.5f, 3.0f));
@@ -40,6 +41,23 @@ bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 // _________________________
+
+// _________ Light _________
+glm::vec3 lightPos(0.0f, 3.0f, 0.0f);
+glm::vec3 lightDir(0.0f, -10.0f, 0.0f);
+//__________________________
+
+int cubeNumber=3;
+int sphereNumber=3;
+glm::vec3 objectPosition[]={
+    glm::vec3(5.0f, 0.5f, -0.5f),
+    glm::vec3(-2.0f, 0.5f, 0.0f),
+    glm::vec3(1.0f, 0.5f, 1.0f),
+    //sphere
+    glm::vec3(-1.0f, 0.0f, -3.0f),
+    glm::vec3(0.0f, 2.0f, -0.5f),
+    glm::vec3(-5.0f, 1.0f, -0.5f)
+};
 
 int main(){
 
@@ -77,16 +95,17 @@ int main(){
 
 
     Shader textureShader("../shaders/texture.vs", "../shaders/texture.frag");
+    Shader sphereShader("../shaders/sphere.vs", "../shaders/sphere.frag");
 
     GLfloat floor_vertices[] = {
-        //  VERTEX         , Texture Coords
-        -1.0f, 0.0f, -1.0f,  0.0f, 1.0f,
-        -1.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-         1.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+        //  VERTEX         , Texture Coord, NORMAL
+        -1.0f, 0.0f, -1.0f,  0.0f, 1.0f,   0.0,1.0,0.0,
+        -1.0f, 0.0f, 1.0f,   0.0f, 0.0f,   0.0,1.0,0.0,
+         1.0f, 0.0f, 1.0f,   1.0f, 0.0f,   0.0,1.0,0.0,
 
-         1.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-         1.0f, 0.0f, -1.0f, 1.0f, 1.0f,
-        -1.0f, 0.0f, -1.0f, 0.0f, 1.0f,
+         1.0f, 0.0f, 1.0f,  1.0f, 0.0f,    0.0,1.0,0.0,
+         1.0f, 0.0f, -1.0f, 1.0f, 1.0f,    0.0,1.0,0.0,
+        -1.0f, 0.0f, -1.0f, 0.0f, 1.0f,    0.0,1.0,0.0,
     };
 
       GLfloat cube_vertices[] = {
@@ -143,11 +162,14 @@ int main(){
     glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), floor_vertices, GL_STATIC_DRAW);
      // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     // TexCoord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0); // Unbind VAO
 
@@ -186,25 +208,10 @@ int main(){
     SOIL_free_image_data(image);
     glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
-     // Load and create a floor texture --> Cube
-    GLuint textureCube;
-    glGenTextures(1, &textureCube);
-    glBindTexture(GL_TEXTURE_2D, textureCube); // All upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // Set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // Set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Load image, create texture and generate mipmaps
-    image = SOIL_load_image("../textures/container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    SOIL_free_image_data(image);
-    glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
+    //Model Load
+    char pathSphere[] = "../model/sphere.obj";
+    Model sphereModel(pathSphere);
 
-    // checks at the start of each loop iteration if GLFW
-    // has been instructed to close
     while(!glfwWindowShouldClose(window)){
         // Set frame time
         GLfloat currentFrame = glfwGetTime();
@@ -227,6 +234,18 @@ int main(){
         textureShader.Use();
         glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniform3f(glGetUniformLocation(textureShader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+        glUniform3f(glGetUniformLocation(textureShader.Program, "light.position"),lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(glGetUniformLocation(textureShader.Program, "light.direction"), lightDir.x, lightDir.y, lightDir.z);
+        glUniform1f(glGetUniformLocation(textureShader.Program, "light.cutOff"), glm::cos(glm::radians(45.5f)));
+        glUniform1f(glGetUniformLocation(textureShader.Program, "light.outerCutOff"), glm::cos(glm::radians(50.5f)));
+        glUniform3f(glGetUniformLocation(textureShader.Program, "light.ambient"),   0.7f, 0.7f, 0.7f);
+        glUniform3f(glGetUniformLocation(textureShader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
+        glUniform3f(glGetUniformLocation(textureShader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
+        glUniform1f(glGetUniformLocation(textureShader.Program, "light.constant"),  1.0f);
+        glUniform1f(glGetUniformLocation(textureShader.Program, "light.linear"),    0.09);
+        glUniform1f(glGetUniformLocation(textureShader.Program, "light.quadratic"), 0.032);
+        glUniform1f(glGetUniformLocation(textureShader.Program, "material.shininess"), 32.0f);
 
         glm::mat4 modelFloor;
         GLfloat dim = 10;
@@ -237,20 +256,53 @@ int main(){
         glBindVertexArray(0);
         //_________Draw Cube _____________
         // Bind Texture
-        glBindTexture(GL_TEXTURE_2D, textureCube);
+        //NOTA: use same texture of the floor
 
         glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-        for(int i=0;i<5;i++){
+        for(int i=0;i<cubeNumber;i++){
             glm::mat4 modelCube;
             //TODO: generate random position on the floor
-            modelCube =  glm::translate(modelCube, glm::vec3((GLfloat)i,0.0f, 0.0f));
+            modelCube =  glm::translate(modelCube, objectPosition[i]);
             glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelCube));
             glBindVertexArray(cubeVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glBindVertexArray(0);
+
+        //---------Draw Sphere -------------
+        sphereShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "viewPos"),camera.Position.x, camera.Position.y, camera.Position.z);
+        //sphere color
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "sphereColor"), 1.0f, 0.0f, 0.0f);
+        //setting light of the sphere
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.position"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.direction"), lightDir.x, lightDir.y, lightDir.z);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.cutOff"),glm::cos(glm::radians(40.0f)));
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.outerCutOff"), glm::cos(glm::radians(45.0f)));
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.ambient"),   0.7f, 0.7f, 0.7f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.constant"),  1.0f);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.linear"),    0.09);
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "light.quadratic"), 0.032);
+
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.ambient"),   0.4f, 0.4f, 0.4f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.diffuse"),   0.7f, 0.7f, 0.7f);
+        glUniform3f(glGetUniformLocation(sphereShader.Program, "material.specular"),  1.0f, 1.0f, 1.0f); // Specular doesn't have full effect on this object's material
+        glUniform1f(glGetUniformLocation(sphereShader.Program, "material.shininess"), 32.0f);
+        for(int i=cubeNumber;i<cubeNumber+sphereNumber;i++){
+            glm::mat4 modelSphere;
+            modelSphere = glm::translate(modelSphere, objectPosition[i]);
+            GLfloat scaleSphere = 0.7;
+            modelSphere = glm::scale(modelSphere, glm::vec3(scaleSphere, scaleSphere, scaleSphere));
+            glUniformMatrix4fv(glGetUniformLocation(sphereShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSphere));
+            sphereModel.Draw(sphereShader);
+        }
 
 
         glfwSwapBuffers(window);
@@ -280,18 +332,40 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
+void checkCollision(Camera_Movement back_move,GLfloat deltaTime){
+    bool collision = false;
+    for(int i = 0; i < cubeNumber+sphereNumber; i++){
+        if(detectCollision(objectPosition[i],1.0f)){
+            collision = true;
+            break;
+        }
+    }
+    if(collision)
+        camera.ProcessKeyboard(back_move, deltaTime);
+}
+
 void Do_Movement()
 {
     // Camera controls
-    if(keys[GLFW_KEY_W])
+    if(keys[GLFW_KEY_W]){
         camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(keys[GLFW_KEY_S])
+        checkCollision(BACKWARD, deltaTime);
+    }
+    if(keys[GLFW_KEY_S]){
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(keys[GLFW_KEY_A])
+        checkCollision(FORWARD, deltaTime);
+    }
+    if(keys[GLFW_KEY_A]){
         camera.ProcessKeyboard(LEFT, deltaTime);
-    if(keys[GLFW_KEY_D])
+        checkCollision(RIGHT, deltaTime);
+    }
+    if(keys[GLFW_KEY_D]){
         camera.ProcessKeyboard(RIGHT, deltaTime);
+        checkCollision(LEFT, deltaTime);
+    }
 }
+
+
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
@@ -311,4 +385,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
+
+bool detectCollision(glm::vec3 object, float rag){
+    //distance between camera and the object
+    float distance = sqrt(pow(camera.Position.x - object.x, 2) + pow(camera.Position.y - object.y, 2) + pow(camera.Position.z - object.z, 2));
+    if(distance <= rag)
+        return true;
+    return false;
+}
 
