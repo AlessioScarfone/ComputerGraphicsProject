@@ -264,7 +264,6 @@ int main(){
 
         for(int i=0;i<cubeNumber;i++){
             glm::mat4 modelCube;
-            //TODO: generate random position on the floor
             modelCube =  glm::translate(modelCube, objectPosition[i]);
             glUniformMatrix4fv(glGetUniformLocation(textureShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelCube));
             glBindVertexArray(cubeVAO);
