@@ -35,7 +35,8 @@ void Do_Movement();
 
 GLfloat *readFile(char* path);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
-//void createVertexList(GLfloat ** altitudeMatrix,GLfloat[] vertexList);
+void createVertexMatrix(GLfloat* vertex, GLfloat ** altitudeMatrix, int rowsNum, int colsNum);
+void createIndex(GLint* indices, int rowsNum, int colsNum);
 
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.5f, 3.0f));
@@ -96,15 +97,33 @@ int main(){
     // ----- END CONFIGURATION OPENGL AND WINDOW ----
 
     GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat");
-    GLfloat ** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
+    GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
 
-    //print matrix
-    for(int i = 0; i<rows ;i++){
-        for(int j=0; j<cols ;j++){
-            std::cout<<altitudeMatrix[i][j]<<",";
-        }
-        std::cout<<endl;
-    }
+//    //print matrix
+//    for(int i = 0; i<rows ;i++){
+//        for(int j=0; j<cols ;j++){
+//            std::cout<<altitudeMatrix[i][j]<<",";
+//        }
+//        std::cout<<endl;
+//    }
+
+     GLfloat* vectorCoordinates = new GLfloat[cols*rows*3]; //each vertex with 3 coord
+     createVertexMatrix(vectorCoordinates, altitudeMatrix,rows,cols);
+     //print vertex list
+//     for(int i = 0; i<300 ;i+=3){
+//        std::cout<<i/3<<" - x:"<<vectorCoordinates[i]
+//                   <<", y:"<<vectorCoordinates[i+1]
+//                   <<", z:"<<vectorCoordinates[i+2]<<endl;
+//     }
+     int indexNum =(rows-1)*(cols-1)* 2 * 3; //r-1*c-1 square,* 2 triangle , * 3 coord
+     std::cout<<"index dim:"<<indexNum<<endl;
+     GLint* indices = new GLint[indexNum];
+     createIndex(indices, rows,cols);
+//     for(int i = 0; i<indexNum ;i+=3){
+//         std::cout<<i/3<<" - "<<indices[i]
+//                  <<" , "<<indices[i+1]
+//                  <<" , "<<indices[i+2]<<endl;
+//     }
 
 
     while(!glfwWindowShouldClose(window)){
@@ -160,13 +179,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         lastY = ypos;
         firstMouse = false;
     }
-
     GLfloat xoffset = xpos - lastX;
     GLfloat yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
-
     lastX = xpos;
     lastY = ypos;
-
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
@@ -261,4 +277,42 @@ GLfloat** createMatrix(GLfloat* input, int r,int c){
         }
     }
     return matrix;
+}
+
+void createVertexMatrix(GLfloat* vertex,GLfloat ** altitudeMatrix, int rows, int cols){
+    int index=0;
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            vertex[index] = i;
+            vertex[index+1] = altitudeMatrix[i][j];
+            vertex[index+2] = j;
+            index = index+3;
+        }
+    }
+}
+
+void createIndex(GLint* indices, int rowsNum, int colsNum){
+    int index=0;
+    int it = (rowsNum*colsNum)-colsNum;
+    std::cout<<"iteration:"<<it<<endl;
+    for(int i = 0; i < it; i++){
+        if(i%colsNum == colsNum-1){      //skip last col
+            std::cout<<i<<" skip"<<endl;
+            continue;
+        }
+        indices[index] = i;
+        indices[index+1] = i+1;
+        indices[index+2] = i+colsNum;
+
+        indices[index+3] = indices[index+2];
+        indices[index+4] = indices[index+2]+1;
+        indices[index+5] = i+1;
+
+//        std::cout<<i<<":"<<indices[index]<<","<<indices[index+1]<<","<<indices[index+2]<<endl;
+//        std::cout<<i<<":"<<indices[index+3]<<","<<indices[index+4]<<","<<indices[index+5]<<endl;
+
+        index= index + 6;
+    }
+    std::cout<<"END"<<index<<endl;
+    return;
 }
