@@ -43,8 +43,8 @@ GLfloat lastFrame = 0.0f;
 // _________________________
 
 // _________ Light _________
-glm::vec3 lightPos(0.0f, 3.0f, 0.0f);
-glm::vec3 lightDir(0.0f, -10.0f, 0.0f);
+glm::vec3 lightPos(-1.0f, 3.5f, 2.0f);
+glm::vec3 lightDir(-2.0f, -10.0f, -3.0f);
 //__________________________
 
 int cubeNumber=3;
@@ -56,7 +56,7 @@ glm::vec3 objectPosition[]={
     //sphere
     glm::vec3(-1.0f, 0.0f, -3.0f),
     glm::vec3(0.0f, 2.0f, -0.5f),
-    glm::vec3(-5.0f, 1.0f, -0.5f)
+    glm::vec3(-5.0f, 0.7f, -0.5f)
 };
 
 int main(){
@@ -96,6 +96,7 @@ int main(){
 
     Shader textureShader("../shaders/texture.vs", "../shaders/texture.frag");
     Shader sphereShader("../shaders/sphere.vs", "../shaders/sphere.frag");
+    Shader lampShader("../shaders/lamp.vs", "../shaders/lamp.frag");
 
     GLfloat floor_vertices[] = {
         //  VERTEX         , Texture Coord, NORMAL
@@ -304,6 +305,18 @@ int main(){
             sphereModel.Draw(sphereShader);
         }
 
+        // DRAW LAMP
+        lampShader.Use();
+        glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glm::mat4 modelLamp;
+        modelLamp = glm::translate(modelLamp, lightPos);
+        GLfloat scaleLamp = 0.1;
+        modelLamp = glm::scale(modelLamp, glm::vec3(scaleLamp, scaleLamp, scaleLamp));
+        glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelLamp));
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
     }
@@ -311,6 +324,8 @@ int main(){
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &floorVAO);
     glDeleteBuffers(1, &floorVBO);
+    glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteBuffers(1, &cubeVBO);
 
     //EXIT LOOOP
     glfwTerminate();
@@ -334,10 +349,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void checkCollision(Camera_Movement back_move,GLfloat deltaTime){
     bool collision = false;
-    for(int i = 0; i < cubeNumber+sphereNumber; i++){
-        if(detectCollision(objectPosition[i],1.0f)){
+    for(int i = 0; i < cubeNumber; i++){
+        if(detectCollision(objectPosition[i],0.9f)){
             collision = true;
             break;
+        }
+    }
+    if(!collision){
+        for(int i = cubeNumber; i < cubeNumber+sphereNumber; i++){
+            if(detectCollision(objectPosition[i],1.2f)){
+                collision = true;
+                break;
+            }
         }
     }
     if(collision)
