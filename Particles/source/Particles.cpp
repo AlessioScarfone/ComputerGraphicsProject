@@ -293,6 +293,7 @@ int main(){
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glm::mat4 modelSpotlight;
         dim = 0.05f;
+        modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
         if(rotationON){
             modelSpotlight = glm::rotate(modelSpotlight, rotationY, glm::vec3(0.0, 1.0, 0.0));
 //            modelSpotlight = glm::rotate(modelSpotlight, rotationX, glm::vec3(1.0, 0.0, 0.0));
@@ -302,7 +303,6 @@ int main(){
             rotationX=0;
             rotationON=false;
         }
-        modelSpotlight = glm::translate(modelSpotlight, glm::vec3(lightPos.x,lightPos.y,lightPos.z));
         modelSpotlight = glm::rotate(modelSpotlight, lamp_self_rotate, glm::vec3(0.0, 1.0, 0.0));
         modelSpotlight =glm::scale(modelSpotlight, glm::vec3(dim, dim, dim));
         glUniformMatrix4fv(glGetUniformLocation(spotlightShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSpotlight));

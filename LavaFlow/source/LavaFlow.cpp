@@ -39,7 +39,7 @@ void createVertexMatrix(GLfloat* vertex, GLfloat ** altitudeMatrix, int rowsNum,
 void createIndex(GLint* indices, int rowsNum, int colsNum);
 
 // _________Camera _________
-Camera camera(glm::vec3(0.0f, 2.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.5f, 2.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -96,8 +96,8 @@ int main(){
 
     // ----- END CONFIGURATION OPENGL AND WINDOW ----
 
-    GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat");
-//    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat");
+//    GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat");
+    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat");
     GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
 
 //    //print matrix
@@ -128,7 +128,6 @@ int main(){
 //     }
 
      Shader base("../shaders/base.vs", "../shaders/base.frag");
-
 
      GLuint VAO,VBO,EBO;;
      glGenVertexArrays(1, &VAO);
@@ -165,7 +164,7 @@ int main(){
         glBindVertexArray(VAO);
         glm::mat4 volcanModel;
         glUniformMatrix4fv(glGetUniformLocation(base.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
-        glDrawElements(GL_TRIANGLES, neededTriangles, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
@@ -303,21 +302,50 @@ GLfloat** createMatrix(GLfloat* input, int r,int c){
     return matrix;
 }
 
+void normalizeNumber(GLfloat &val, GLfloat max, GLfloat min){ //in range [0,1]
+    val = (val - min) / (max - min);
+}
+
 
 void createVertexMatrix(GLfloat* vertex,GLfloat ** altitudeMatrix, int rows, int cols, int cellSize){
     int index=0;
+    GLfloat maxVal=-10000.0f;
+    GLfloat minVal=+10000.0f;
     for(int i = 0; i < rows; i++){
         for(int j = 0; j < cols; j++){
-            glm::vec3 vec(i*cellSize, altitudeMatrix[i][j], j*cellSize);
-            glm::vec3 normalizedVec=glm::normalize(vec);
-            vertex[index] = normalizedVec.x;
-            vertex[index+1] = normalizedVec.y;
-            vertex[index+2] = normalizedVec.z;
+            vertex[index] = i*cellSize;
+            vertex[index+1] = altitudeMatrix[i][j];
+            vertex[index+2] = j*cellSize;
+
+            if( vertex[index] > maxVal) {
+                maxVal=vertex[index];
+            }
+            if( vertex[index] > maxVal){
+                maxVal=vertex[index+1];
+            }
+            if( vertex[index] > maxVal){
+                maxVal=vertex[index+2];
+            }
+
+            if( vertex[index] < minVal) {
+                minVal=vertex[index];
+            }
+            if( vertex[index] < minVal){
+                minVal=vertex[index+1];
+            }
+            if( vertex[index] < minVal){
+                minVal=vertex[index+2];
+            }
 
             index = index+3;
         }
     }
+    std::cout<<"MAX:"<<maxVal<<endl;
+    for(;index-1 >= 0; index--){
+        normalizeNumber(vertex[index],maxVal,minVal);
+    }
 }
+
 
 
 
