@@ -24,6 +24,8 @@
 // Other
 #include <SOIL/SOIL.h>
 
+#include "vertex.h"
+
 
 GLuint screenWidth = 1024;
 GLuint screenHeight = 800;
@@ -35,8 +37,13 @@ void Do_Movement();
 
 GLfloat *readFile(char* path);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
-void createVertexMatrix(GLfloat* vertex, GLfloat ** altitudeMatrix, int rowsNum, int colsNum, int cellSize);
-void createIndex(GLint* indices, int rowsNum, int colsNum);
+void createVertex(GLfloat* vertex, GLfloat** altitudeMatrix, int rowsNum, int colsNum, int cellSize);
+//void createNormal(GLfloat* normals,GLfloat** altitudeMatrix);
+void createIndex(GLint* indices);
+void updateMaxAndMin(GLfloat* vertex, GLint index);
+glm::vec3 calculateNormal(GLfloat** matrix, int i, int j);
+GLfloat normalizeNumber(GLfloat val);
+void CalculateNormalForVertices(GLfloat* verticesCoordinates,GLfloat* normals,GLfloat* verticesNormalCoordinates);
 
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.5f, 2.0f));
@@ -48,6 +55,9 @@ GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 float anglePitch = 0.0f;
 float angleYao = 0.0f;
+
+GLfloat maxVal=-10000;
+GLfloat minVal=10000;
 // _________________________
 
 // _________ Light _________
@@ -108,26 +118,49 @@ int main(){
 //        std::cout<<endl;
 //    }
 
-     GLfloat* vectorCoordinates = new GLfloat[cols*rows*3]; //each vertex with 3 coord
-     createVertexMatrix(vectorCoordinates, altitudeMatrix,rows,cols,cellSize);
+     Vertex* verticesCoordinates = new Vertex[cols*rows];
+     createVertex(verticesCoordinates, altitudeMatrix,rows,cols,cellSize);
      //print vertex list
-     for(int i = 0; i<300 ;i+=3){
-        std::cout<<i/3<<" - x:"<<vectorCoordinates[i]
-                   <<", y:"<<vectorCoordinates[i+1]
-                   <<", z:"<<vectorCoordinates[i+2]<<endl;
-     }
+//     for(int i = 0; i<300 ;i+=3){
+//        std::cout<<i/3<<" - x:"<<verticesCoordinates[i]
+//                   <<", y:"<<verticesCoordinates[i+1]
+//                   <<", z:"<<verticesCoordinates[i+2]<<endl;
+//     }
+
+//     GLfloat* normals = new GLfloat[cols*rows*(3)]; //each vertex with 3 coord
+//     createNormal(normals, altitudeMatrix);
+//          for(int i = 0; i<cols*rows*(3) ;i+=3){
+//              std::cout<<i/3<<" - "<<normals[i]
+//                       <<" , "<<normals[i+1]
+//                       <<" , "<<normals[i+2]<<endl;
+//          }
+
      int neededTriangles = (rows-1)*(cols-1)* 2;
      int indexNum = neededTriangles * 3; //r-1*c-1 square,* 2 triangle , * 3 coord
 //     std::cout<<"index dim:"<<indexNum<<endl;
      GLint* indices = new GLint[indexNum];
-     createIndex(indices, rows,cols);
+     createIndex(indices);
 //     for(int i = 0; i<indexNum ;i+=3){
 //         std::cout<<i/3<<" - "<<indices[i]
 //                  <<" , "<<indices[i+1]
 //                  <<" , "<<indices[i+2]<<endl;
 //     }
 
-     Shader base("../shaders/base.vs", "../shaders/base.frag");
+     GLfloat* VNCoordinates = new GLfloat[cols*rows*(3+3)];//3 coord and 3 for normal
+     CalculateNormalForVertices(verticesCoordinates,indices, VNCoordinates);
+//     for(int i = 0; i<cols*rows*(3+3) ;i+=6){
+//         std::cout<<i/3<<" - x:"<<VNCoordinates[i]
+//                    <<", y:"<<VNCoordinates[i+1]
+//                   <<", z:"<<VNCoordinates[i+2]
+//                  << "  NORMAL ("<<VNCoordinates[i+3]<<","<<VNCoordinates[i+4]<<","<<VNCoordinates[i+5]<<")"<<endl;
+//     }
+
+     Shader vulcan("../shaders/base.vs", "../shaders/base.frag");
+     Shader lamp("../shaders/light.vs", "../shaders/light.frag");
+
+     char pathSphere[] = "../model/sphere.obj";
+     Model modelSphere(pathSphere);
+
 
      GLuint VAO,VBO,EBO;;
      glGenVertexArrays(1, &VAO);
@@ -135,10 +168,13 @@ int main(){
      glGenBuffers(1, &EBO);
      glBindVertexArray(VAO);
      glBindBuffer(GL_ARRAY_BUFFER, VBO);
-     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (cols*rows*3), vectorCoordinates, GL_STATIC_DRAW);
+     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (cols*rows*3), VNCoordinates, GL_STATIC_DRAW);
      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat)*neededTriangles*2, indices, GL_STATIC_DRAW);
-     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+     // position
+     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+     // normal
+     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)3);
      glEnableVertexAttribArray(0);
      glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
 
@@ -158,14 +194,30 @@ int main(){
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        base.Use();
-        glUniformMatrix4fv(glGetUniformLocation(base.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(base.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        vulcan.Use();
+        glUniform3f(glGetUniformLocation(vulcan.Program, "light.position"), camera.Front.x, camera.Front.y, -camera.Front.z);
+        glUniform3f(glGetUniformLocation(vulcan.Program, "light.ambient"),  0.3f, 0.3f, 0.3f);
+
+        glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glBindVertexArray(VAO);
         glm::mat4 volcanModel;
-        glUniformMatrix4fv(glGetUniformLocation(base.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
+        glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
         glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+
+        //Draw Lamp
+        lamp.Use();
+        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        glm::mat4 spheres;
+        spheres = glm::scale(spheres, glm::vec3(0.05f, 0.05f, 0.05f));
+        spheres = glm::translate(spheres, lightpos);
+        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "model"), 1, GL_FALSE, glm::value_ptr(spheres));
+       // modelSphere.Draw(lamp);
+        glBindVertexArray(0);
+
 
         glfwSwapBuffers(window);
     }
@@ -173,6 +225,17 @@ int main(){
     // Properly de-allocate all resources once they've outlived their purpose
 //    glDeleteVertexArrays(1, &floorVAO);
 //    glDeleteBuffers(1, &floorVBO);
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+
+    delete[] altitudeCoordinates;
+    delete[] altitudeMatrix;
+    delete[] verticesCoordinates;
+    delete[] normals;
+    delete[] indices;
+    delete[] VNCoordinates;
 
     //EXIT LOOOP
     glfwTerminate();
@@ -246,6 +309,124 @@ void Do_Movement()
     }
 }
 
+// ====================================================================
+
+GLfloat** createMatrix(GLfloat* input, int r,int c){
+    //create matrix structure
+    GLfloat** matrix = new GLfloat*[r];
+    for (int i = 0; i < r; ++i)
+        matrix[i] = new GLfloat[c];
+    //fill the matrix with data of input
+    for(int i = 0; i<r ;i++){
+        for(int j=0; j<c ;j++){
+            matrix[i][j] = input[(i*c)+j];
+        }
+    }
+    return matrix;
+}
+
+GLfloat normalizeNumber(GLfloat val){ //in range [0,1]
+    GLfloat newVal = (val - minVal) / (maxVal - minVal);
+    return newVal;
+}
+
+void createVertex(Vertex* vertex,GLfloat ** altitudeMatrix, int rows, int cols, int cellSize){
+    GLint index=0;
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            Vertex v = new Vertex(i*cellSize,altitudeMatrix[i][j],j*cellSize);
+//            vertex[index] = i*cellSize;
+//            vertex[index+1] = altitudeMatrix[i][j];
+//            vertex[index+2] = j*cellSize;
+
+            updateMaxAndMin(vertex,index);
+
+            index = index+3;
+        }
+    }
+    std::cout<<"MAX:"<<maxVal<<endl;
+    std::cout<<"MIN:"<<maxVal<<endl;
+    for(;index-1 >= 0; index--){
+        vertex[index] = normalizeNumber(vertex[index]);
+    }
+}
+
+//void createNormal(GLfloat* normals,GLfloat** altitudeMatrix){
+//    GLint index=0;
+//    for(int i = 0; i < rows; i++){
+//        for(int j = 0; j < cols; j++){
+//            glm::vec3 normal= calculateNormal(altitudeMatrix,i,j);
+//            normals[index] = normal.x;
+//            normals[index+1] = normal.y;
+//            normals[index+2] = normal.z;
+
+//            index = index+3;
+//        }
+//    }
+//}
+
+void createIndex(GLint* indices){
+    int index=0;
+    int it = (rows*cols)-cols;
+    //    std::cout<<"iteration:"<<it<<endl;
+    for(int i = 0; i < it; i++){
+        if(i%cols == cols-1){      //skip last col
+            //            std::cout<<i<<" skip"<<endl;
+            continue;
+        }
+        indices[index] = i;
+        indices[index+1] = i+1;
+        indices[index+2] = i+cols;
+
+        indices[index+3] = indices[index+2];
+        indices[index+4] = indices[index+2]+1;
+        indices[index+5] = i+1;
+
+        //        std::cout<<i<<":"<<indices[index]<<","<<indices[index+1]<<","<<indices[index+2]<<endl;
+        //        std::cout<<i<<":"<<indices[index+3]<<","<<indices[index+4]<<","<<indices[index+5]<<endl;
+
+        index= index + 6;
+    }
+    //    std::cout<<"END"<<index<<endl;
+}
+
+void CalculateNormalForVertices(GLfloat* verticesCoordinates,GLfloat* indices,GLfloat* VNCoordinates){
+    int index=0;
+    for (int i =0;i<cols*rows*(3);i+=3){
+        //copy vertex
+        for(int j=0;j<3;j++){
+            VNCoordinates[index+j] = verticesCoordinates[i+j];
+         }
+        //copy normal
+
+        for(int j=0;j<3;j++){
+            VNCoordinates[index+j] = normals[i+j];
+         }
+    }
+}
+
+void updateMaxAndMin(GLfloat* vertex, GLint index){
+    if( vertex[index] > maxVal) {
+        maxVal=vertex[index];
+    }
+    if( vertex[index] > maxVal){
+        maxVal=vertex[index+1];
+    }
+    if( vertex[index] > maxVal){
+        maxVal=vertex[index+2];
+    }
+
+    if( vertex[index] < minVal) {
+        minVal=vertex[index];
+    }
+    if( vertex[index] < minVal){
+        minVal=vertex[index+1];
+    }
+    if( vertex[index] < minVal){
+        minVal=vertex[index+2];
+    }
+}
+
 GLfloat *readFile(char* path){
     GLfloat* coordinates = 0;
     ifstream file(path);
@@ -286,90 +467,4 @@ GLfloat *readFile(char* path){
         }
     file.close();
     return coordinates;
-}
-
-GLfloat** createMatrix(GLfloat* input, int r,int c){
-    //create matrix structure
-    GLfloat** matrix = new GLfloat*[r];
-    for (int i = 0; i < r; ++i)
-        matrix[i] = new GLfloat[c];
-    //fill the matrix with data of input
-    for(int i = 0; i<r ;i++){
-        for(int j=0; j<c ;j++){
-            matrix[i][j] = input[(i*c)+j];
-        }
-    }
-    return matrix;
-}
-
-void normalizeNumber(GLfloat &val, GLfloat max, GLfloat min){ //in range [0,1]
-    val = (val - min) / (max - min);
-}
-
-
-void createVertexMatrix(GLfloat* vertex,GLfloat ** altitudeMatrix, int rows, int cols, int cellSize){
-    int index=0;
-    GLfloat maxVal=-10000.0f;
-    GLfloat minVal=+10000.0f;
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < cols; j++){
-            vertex[index] = i*cellSize;
-            vertex[index+1] = altitudeMatrix[i][j];
-            vertex[index+2] = j*cellSize;
-
-            if( vertex[index] > maxVal) {
-                maxVal=vertex[index];
-            }
-            if( vertex[index] > maxVal){
-                maxVal=vertex[index+1];
-            }
-            if( vertex[index] > maxVal){
-                maxVal=vertex[index+2];
-            }
-
-            if( vertex[index] < minVal) {
-                minVal=vertex[index];
-            }
-            if( vertex[index] < minVal){
-                minVal=vertex[index+1];
-            }
-            if( vertex[index] < minVal){
-                minVal=vertex[index+2];
-            }
-
-            index = index+3;
-        }
-    }
-    std::cout<<"MAX:"<<maxVal<<endl;
-    for(;index-1 >= 0; index--){
-        normalizeNumber(vertex[index],maxVal,minVal);
-    }
-}
-
-
-
-
-void createIndex(GLint* indices, int rowsNum, int colsNum){
-    int index=0;
-    int it = (rowsNum*colsNum)-colsNum;
-    //    std::cout<<"iteration:"<<it<<endl;
-    for(int i = 0; i < it; i++){
-        if(i%colsNum == colsNum-1){      //skip last col
-            //            std::cout<<i<<" skip"<<endl;
-            continue;
-        }
-        indices[index] = i;
-        indices[index+1] = i+1;
-        indices[index+2] = i+colsNum;
-
-        indices[index+3] = indices[index+2];
-        indices[index+4] = indices[index+2]+1;
-        indices[index+5] = i+1;
-
-        //        std::cout<<i<<":"<<indices[index]<<","<<indices[index+1]<<","<<indices[index+2]<<endl;
-        //        std::cout<<i<<":"<<indices[index+3]<<","<<indices[index+4]<<","<<indices[index+5]<<endl;
-
-        index= index + 6;
-    }
-    //    std::cout<<"END"<<index<<endl;
 }
