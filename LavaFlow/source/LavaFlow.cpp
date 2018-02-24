@@ -49,7 +49,7 @@ GLfloat* buildVBO(vector<MyVertex>& verticesCoordinates);
 GLfloat normalizeNumber(GLfloat val);
 
 // _________Camera _________
-Camera camera(glm::vec3(0.0f, 0.5f, 2.0f));
+Camera camera(glm::vec3(-0.5f, 1.0f, 2.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -64,7 +64,7 @@ GLfloat minVal=10000;
 // _________________________
 
 // _________ Light _________
-glm::vec3 lightpos(0.0f, 0.0f, 50.0f);
+glm::vec3 lightpos(-4.0f, 25.0f, 7.0f);
 //__________________________
 
 int rows = 0;
@@ -159,15 +159,15 @@ int main(){
      Model modelSphere(pathSphere);
 
      GLfloat* vertexData = buildVBO(verticesCoordinates);
-     for(int i=0;i<rows*cols*9;i+=9){
-         for(int j=0;j<9;j++){
-             if(j==0) cout<<"V:";
-             if(j==3) cout<<"|\t N:";
-             if(j==6) cout<<"|\t C:";
-            cout<<vertexData[i+j]<<"  ";
-         }
-         cout<<endl;
-     }
+//     for(int i=0;i<rows*cols*9;i+=9){
+//         for(int j=0;j<9;j++){
+//             if(j==0) cout<<"V:";
+//             if(j==3) cout<<"|\t N:";
+//             if(j==6) cout<<"|\t C:";
+//            cout<<vertexData[i+j]<<"  ";
+//         }
+//         cout<<endl;
+//     }
 
 
      GLuint VAO,VBO,EBO;
@@ -181,11 +181,13 @@ int main(){
      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat)*neededTriangles*2, indices, GL_STATIC_DRAW);
      // position
      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
+      glEnableVertexAttribArray(0);
      // normal
      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+     glEnableVertexAttribArray(1);
      //color
      glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-     glEnableVertexAttribArray(0);
+     glEnableVertexAttribArray(2);
      glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
 
 
@@ -200,7 +202,7 @@ int main(){
          glfwPollEvents();
          Do_Movement();
 
-         glClearColor(0.15f, 0.15f, 0.15f, 0.5f);
+         glClearColor(0.05f, 0.05f, 0.05f, 0.4f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
          glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
@@ -209,26 +211,28 @@ int main(){
          vulcan.Use();
          glUniform3f(glGetUniformLocation(vulcan.Program, "light.position"), camera.Front.x, camera.Front.y, -camera.Front.z);
          glUniform3f(glGetUniformLocation(vulcan.Program, "light.ambient"),  0.3f, 0.3f, 0.3f);
+         glUniform3f(glGetUniformLocation(vulcan.Program, "light.diffuse"),  0.5f, 0.5f, 0.5f);
 
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
          glBindVertexArray(VAO);
          glm::mat4 volcanModel;
+         volcanModel = glm::rotate(volcanModel, glm::degrees(90.0f), glm::vec3(0.0, 1.0, 0.0));
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
          glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
          glBindVertexArray(0);
 
-         //Draw Lamp
-         //        lamp.Use();
-         //        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-         //        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-         //        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-         //        glm::mat4 spheres;
-         //        spheres = glm::scale(spheres, glm::vec3(0.05f, 0.05f, 0.05f));
-         //        spheres = glm::translate(spheres, lightpos);
-         //        glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "model"), 1, GL_FALSE, glm::value_ptr(spheres));
-         //        modelSphere.Draw(lamp);
-         //        glBindVertexArray(0);
+//         Draw Lamp
+         lamp.Use();
+         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+         glm::mat4 lampModel;
+         lampModel = glm::scale(lampModel, glm::vec3(0.05f, 0.05f, 0.05f));
+         lampModel = glm::translate(lampModel, lightpos);
+         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "model"), 1, GL_FALSE, glm::value_ptr(lampModel));
+         modelSphere.Draw(lamp);
+         glBindVertexArray(0);
 
 
          glfwSwapBuffers(window);
