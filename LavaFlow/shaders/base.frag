@@ -10,7 +10,7 @@ struct Light {
 
 in vec3 FragPos;
 in vec3 Normal;
-//in vec3 colorFrag;
+in vec3 colorFrag;
 
 out vec4 color;
 
@@ -27,9 +27,9 @@ void main()
 //    float diff = max(dot(norm, lightDir), 0.0);
 //    vec3 diffuse = light.diffuse * diff;
 
-//    vec3 result = ambient;
-//    color = vec4(result, 1.0f);
-    color = vec4(1.0);
+    vec3 result = ambient * colorFrag;
+    color = vec4(result, 1.0f);
+//    color = vec4(1.0);
 
 //    if(colorFrag.x == 0.0f){
 //        color = vec4(result, 1.0f);
