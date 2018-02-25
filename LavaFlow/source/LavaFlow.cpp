@@ -28,7 +28,6 @@
 
 using namespace std;
 
-
 GLuint screenWidth = 1024;
 GLuint screenHeight = 800;
 
@@ -37,7 +36,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
-GLfloat *readFile(char* path);
+GLfloat *readFile(char* path,bool checkNoValue);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
 void createVertex( vector<MyVertex>& vertexVector, GLfloat** altitudeMatrix,GLfloat** temperatureMatrix);
 void sumLava(GLfloat** altitudeMatrix,GLfloat** lavaMatrix);
@@ -47,6 +46,8 @@ void computeNormal(vector<MyVertex>& verticesCoordinates);
 void updateMaxAndMin(MyVertex v);
 GLfloat* buildVBO(vector<MyVertex>& verticesCoordinates);
 GLfloat normalizeNumber(GLfloat val);
+
+void destroyMatrix(GLfloat** matrix);
 
 // _________Camera _________
 Camera camera(glm::vec3(-0.5f, 1.0f, 2.0f));
@@ -67,7 +68,7 @@ GLfloat minTemp=0.0f;
 // _________________________
 
 // _________ Light _________
-glm::vec3 lightpos(-4.0f, 25.0f, 7.0f);
+glm::vec3 lightpos(0.0f, 1.0f, 0.0f);
 //__________________________
 
 int rows = 0;
@@ -113,15 +114,16 @@ int main(){
     // ----- END CONFIGURATION OPENGL AND WINDOW ----
 
 //    GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat"); //TEST
-    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat");
+    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat",true);
     GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
-    GLfloat* lavaCoordinates = readFile("../dataset/lava.dat");
+    GLfloat* lavaCoordinates = readFile("../dataset/lava.dat",false);
     GLfloat** lavaMatrix = createMatrix(lavaCoordinates,rows,cols);
-    GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat");
+    GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat",false);
     GLfloat** temperatureMatrix = createMatrix(temperatureCoordinates,rows,cols);
 
     delete altitudeCoordinates;
     delete lavaCoordinates;
+    delete temperatureCoordinates;
 
     sumLava(altitudeMatrix,lavaMatrix);
 
@@ -143,9 +145,9 @@ int main(){
      cout<<"Max Temp:"<<maxTemp<<endl;
      cout<<"Min Temp:"<<minTemp<<endl;
 
-     int neededTriangles = (rows-1)*(cols-1)* 2;
+     int neededTriangles = (rows-1)*(cols-1)*2; //r-1*n-1 square, each composed by 2 triangles
      int indexNum = neededTriangles * 3; //r-1*c-1 square,* 2 triangle , * 3 coord
-//     std::cout<<"index dim:"<<indexNum<<endl;
+     cout<<"index dim:"<<indexNum<<endl;
      GLint* indices = new GLint[indexNum];
      createIndex(indices,verticesCoordinates);
 //     for(int i = 0; i<indexNum ;i+=3){
@@ -187,7 +189,7 @@ int main(){
      glBindBuffer(GL_ARRAY_BUFFER, VBO);
      glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * (cols*rows*9), vertexData, GL_STATIC_DRAW);
      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat)*neededTriangles*2, indices, GL_STATIC_DRAW);
+     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat)*indexNum, indices, GL_STATIC_DRAW);
      // position
      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
       glEnableVertexAttribArray(0);
@@ -237,8 +239,8 @@ int main(){
          glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
          glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
          glm::mat4 lampModel;
-         lampModel = glm::scale(lampModel, glm::vec3(0.05f, 0.05f, 0.05f));
          lampModel = glm::translate(lampModel, lightpos);
+         lampModel = glm::scale(lampModel, glm::vec3(0.03f, 0.03f, 0.03f));
          glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "model"), 1, GL_FALSE, glm::value_ptr(lampModel));
          modelSphere.Draw(lamp);
          glBindVertexArray(0);
@@ -253,13 +255,21 @@ int main(){
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 
-//    delete[] altitudeCoordinates;
-//    delete[] altitudeMatrix;
+    destroyMatrix(altitudeMatrix);
+    destroyMatrix(lavaMatrix);
+    destroyMatrix(temperatureMatrix);
     delete vertexData;
+    delete indices;
 
     //EXIT LOOOP
     glfwTerminate();
     return 0;
+}
+
+void destroyMatrix(GLfloat** matrix){
+    for(int i=0; i<rows;i++)
+        delete matrix[i];
+    delete matrix;
 }
 
 // Is called whenever a key is pressed/released via GLFW
@@ -362,8 +372,10 @@ void createVertex(vector<MyVertex>& vertexVector, GLfloat ** altitudeMatrix,GLfl
     int index=0;
     for(int i = 0; i < rows; i++){
         for(int j = 0; j < cols; j++){
-            if(altitudeMatrix[i][j] == novalue)
+            if(altitudeMatrix[i][j] == novalue){
+//                cout<<"found novalue!!"<<endl;
                 altitudeMatrix[i][j]=0.0f;
+            }
             MyVertex v (i*cellSize,altitudeMatrix[i][j],j*cellSize);
             v.temperature = temperatureMatrix[i][j];
             v.setPos(index);
@@ -388,11 +400,11 @@ void addConnectedVertex(vector<MyVertex> &verticesCoordinates,int index1,int ind
 void createIndex(GLint* indices,vector<MyVertex> &verticesCoordinates){
     int index=0;
     int it = (rows*cols)-cols;
-    //    std::cout<<"iteration:"<<it<<endl;
+    //cout<<"iteration:"<<it<<endl;
     for(int i = 0; i < it; i++){
-        if(i%cols == cols-1){      //skip last col
-            //            std::cout<<i<<" skip"<<endl;
-            continue;
+        if(i%cols == cols-1){     //skip last col
+            //cout<<i<<" skip"<<endl;
+           continue;
         }
         indices[index] = i;
         indices[index+1] = i+1;
@@ -463,7 +475,7 @@ GLfloat* buildVBO(vector<MyVertex>& verticesCoordinates){
     return vertexData;
 }
 
-GLfloat *readFile(char* path){
+GLfloat *readFile(char* path,bool checkNoValue){
     GLfloat* coordinates = 0;
     ifstream file(path);
     string line;
@@ -490,7 +502,7 @@ GLfloat *readFile(char* path){
             } else if(index == 12){
                 coordinates = new GLfloat[rows*cols];
                 float val = atof(tk);
-                if(val > 0)
+                if(checkNoValue)
                     novalue = atof(tk);
             } else if(index > 12){
                 coordinates[pos] = atof(tk);

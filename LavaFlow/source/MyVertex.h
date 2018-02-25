@@ -82,7 +82,7 @@ public:
             normal = normal+glm::vec3(get<0>(vert_normals[i]),get<1>(vert_normals[i]),get<2>(vert_normals[i]));
         }
         // normal.x *= -1;
-         normal.y *= -1;
+//         normal.y *= -1;
         // normal.z *= -1;
         glm::normalize(normal);
     }
@@ -101,7 +101,7 @@ public:
         return coord[2];
     }
 
-    void normalizeCoord(GLfloat min,GLfloat max){ //in range [0,1]
+    void normalizeCoord(GLfloat min, GLfloat max){ //in range [0,1]
         GLfloat diff=(max - min);
         for(int i=0;i<3;i++){
             coord[i] = (coord[i]-min) / diff;
@@ -121,25 +121,21 @@ public:
     }
 
     void computeColor(GLfloat maxTemp,GLfloat minTemp){
-        //TODO temperature...
-        GLfloat redVal = y();
-        if(temperature!=0.0f){
-             redVal = (temperature - minTemp) / (maxTemp - minTemp);
-             color[0] = redVal;
-             color[1] = 1.0f-y();
+        if(temperature > 0.0f){
+             GLfloat redVal = (temperature - minTemp) / (maxTemp - minTemp);
+             color[0] = 1.0f;
+             color[1] = (y()*y())*(redVal);
              color[2] = 0.0f;
-
-
-             cout<<"RED VALUE:"<<color[0]<<" GREEN VALUE:"<<color[1]<<endl;
+//             cout<<"RED VALUE:"<<color[0]<<" GREEN VALUE:"<<color[1]<<endl;
         }
         else{
-            //set color with altitude
+            //set color from altitude
             color[0] = y();
             color[1] = y();
             color[2] = y();
         }
-
     }
+
 
 
     void print(){
