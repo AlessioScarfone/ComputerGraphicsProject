@@ -39,7 +39,7 @@ void Do_Movement();
 
 GLfloat *readFile(char* path);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
-void createVertex( vector<MyVertex>& vertexVector, GLfloat** altitudeMatrix);
+void createVertex( vector<MyVertex>& vertexVector, GLfloat** altitudeMatrix,GLfloat** temperatureMatrix);
 void sumLava(GLfloat** altitudeMatrix,GLfloat** lavaMatrix);
 void createIndex(GLint* indices, vector<MyVertex>& verticesCoordinates);
 void addConnectedVertex(vector<MyVertex>& verticesCoordinates,int index1,int index2,int index3);
@@ -59,8 +59,11 @@ GLfloat lastFrame = 0.0f;
 float anglePitch = 0.0f;
 float angleYao = 0.0f;
 
-GLfloat maxVal=-10000;
-GLfloat minVal=10000;
+GLfloat maxVal=-100000;
+GLfloat minVal=100000;
+
+GLfloat maxTemp=0.0f;
+GLfloat minTemp=0.0f;
 // _________________________
 
 // _________ Light _________
@@ -114,6 +117,8 @@ int main(){
     GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
     GLfloat* lavaCoordinates = readFile("../dataset/lava.dat");
     GLfloat** lavaMatrix = createMatrix(lavaCoordinates,rows,cols);
+    GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat");
+    GLfloat** temperatureMatrix = createMatrix(temperatureCoordinates,rows,cols);
 
     delete altitudeCoordinates;
     delete lavaCoordinates;
@@ -129,15 +134,18 @@ int main(){
 //    }
 
      vector<MyVertex> verticesCoordinates;
-     createVertex(verticesCoordinates, altitudeMatrix);
+     createVertex(verticesCoordinates, altitudeMatrix,temperatureMatrix);
      cout<<"Vertex num:"<<verticesCoordinates.size()<<endl;
 //     for (auto v:verticesCoordinates)
 //         v.print();
-
+     cout<<"Max altitude:"<<maxVal<<endl;
+     cout<<"Min altitude:"<<minVal<<endl;
+     cout<<"Max Temp:"<<maxTemp<<endl;
+     cout<<"Min Temp:"<<minTemp<<endl;
 
      int neededTriangles = (rows-1)*(cols-1)* 2;
      int indexNum = neededTriangles * 3; //r-1*c-1 square,* 2 triangle , * 3 coord
-     std::cout<<"index dim:"<<indexNum<<endl;
+//     std::cout<<"index dim:"<<indexNum<<endl;
      GLint* indices = new GLint[indexNum];
      createIndex(indices,verticesCoordinates);
 //     for(int i = 0; i<indexNum ;i+=3){
@@ -149,7 +157,8 @@ int main(){
      computeNormal(verticesCoordinates);
 
 //     for(int i =0;i<verticesCoordinates.size();i++){
-//        verticesCoordinates[i].printComplete();
+//            if(verticesCoordinates[i].temperature!=0.0f)
+//                verticesCoordinates[i].printComplete();
 //     }
 
      Shader vulcan("../shaders/base.vs", "../shaders/base.frag");
@@ -191,7 +200,7 @@ int main(){
      glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
 
 
-     cout<<"render"<<endl;
+     cout<<"..:: RENDER ::.."<<endl;
 
      while(!glfwWindowShouldClose(window)){
          // Set frame time
@@ -222,7 +231,7 @@ int main(){
          glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
          glBindVertexArray(0);
 
-//         Draw Lamp
+         // ================= Draw Lamp ===============
          lamp.Use();
          glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
          glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -344,18 +353,19 @@ void sumLava(GLfloat** altitudeMatrix,GLfloat** lavaMatrix){
     }
 }
 
-
-
 GLfloat normalizeNumber(GLfloat val){ //in range [0,1]
     GLfloat newVal = (val - minVal) / (maxVal - minVal);
     return newVal;
 }
 
-void createVertex(vector<MyVertex>& vertexVector, GLfloat ** altitudeMatrix){
+void createVertex(vector<MyVertex>& vertexVector, GLfloat ** altitudeMatrix,GLfloat ** temperatureMatrix ){
     int index=0;
     for(int i = 0; i < rows; i++){
         for(int j = 0; j < cols; j++){
+            if(altitudeMatrix[i][j] == novalue)
+                altitudeMatrix[i][j]=0.0f;
             MyVertex v (i*cellSize,altitudeMatrix[i][j],j*cellSize);
+            v.temperature = temperatureMatrix[i][j];
             v.setPos(index);
             vertexVector.push_back(v);
             index++;
@@ -363,12 +373,9 @@ void createVertex(vector<MyVertex>& vertexVector, GLfloat ** altitudeMatrix){
         }
     }
 
-    cout<<"Vertex number:"<<vertexVector.size()<<endl;
-    std::cout<<"MAX:"<<maxVal<<endl;
-    std::cout<<"MIN:"<<minVal<<endl;
     for(int i = 0; i < vertexVector.size(); i++){
         vertexVector[i].normalizeCoord(minVal,maxVal);
-        vertexVector[i].computeColor();
+        vertexVector[i].computeColor(maxTemp,minTemp);
     }
 }
 
@@ -434,6 +441,12 @@ void updateMaxAndMin(MyVertex v){
         if( coord[i] < minVal) {
             minVal=coord[i];
         }
+    }
+    if( v.temperature > maxTemp) {
+        maxTemp=v.temperature;
+    }
+    if( v.temperature < minTemp) {
+        minTemp=v.temperature;
     }
 }
 

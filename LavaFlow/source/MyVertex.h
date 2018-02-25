@@ -23,7 +23,7 @@ private:
     GLfloat coord [3];
     vector<tuple<int,int>> connectedVertex;
     vector<tuple<GLfloat,GLfloat,GLfloat>> vert_normals;
-    GLfloat color=1.0f;
+    GLfloat color[3];
 
     void addNormal(tuple<GLfloat,GLfloat,GLfloat> t){
         vert_normals.push_back(t);
@@ -31,6 +31,7 @@ private:
 
 public:
     glm::vec3 normal;
+    GLfloat temperature=0.0f;
 
     MyVertex (GLfloat x, GLfloat y, GLfloat z) {
         coord[0] = x;
@@ -41,7 +42,8 @@ public:
     MyVertex (const MyVertex &v){
         for(int i=0;i<3;i++)
             coord[i] = v.coord[i];
-        pos=v.pos;
+        pos = v.pos;
+        temperature = v.temperature;
     }
 
     glm::vec3 calculateFaceNormal(GLfloat p1[3], GLfloat p2[3],bool add){
@@ -118,8 +120,25 @@ public:
         return connectedVertex;
     }
 
-    void computeColor(){
-        color = y();
+    void computeColor(GLfloat maxTemp,GLfloat minTemp){
+        //TODO temperature...
+        GLfloat redVal = y();
+        if(temperature!=0.0f){
+             redVal = (temperature - minTemp) / (maxTemp - minTemp);
+             color[0] = redVal;
+             color[1] = 1.0f-y();
+             color[2] = 0.0f;
+
+
+             cout<<"RED VALUE:"<<color[0]<<" GREEN VALUE:"<<color[1]<<endl;
+        }
+        else{
+            //set color with altitude
+            color[0] = y();
+            color[1] = y();
+            color[2] = y();
+        }
+
     }
 
 
@@ -129,19 +148,21 @@ public:
 
     void printComplete(){
         cout<<pos<<": ("<<x()<<","<<y()<<","<<z()
-           <<") N: ("<<normal.x<<","<<normal.y<<","<<normal.z<<")"<<endl;
+           <<") N: ("<<normal.x<<","<<normal.y<<","<<normal.z<<")"<<" - T:"<<this->temperature<<endl;
     }
 
     vector<GLfloat> createVBOline(){
         vector<GLfloat> line;
-        for(int i=0;i<3;i++)
+        for(int i = 0; i < 3; i++)
             line.push_back(coord[i]);
         line.push_back(normal.x);
         line.push_back(normal.y);
         line.push_back(normal.z);
 
-        for(int i=0;i<3;i++)
-            line.push_back(color);
+        for(int i = 0; i < 3; i++){
+            line.push_back(color[i]);
+        }
         return line;
     }
+
 };

@@ -25,7 +25,7 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(light.position - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff;
+    vec3 diffuse = (light.diffuse * diff);
 
     // Specular
     /*vec3 viewDir = normalize(viewPos - FragPos);
@@ -33,16 +33,14 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
 */
-    vec3 result = ambient + diffuse;
+    vec3 result = (ambient + diffuse);
 
-    color = vec4(result, 1.0f);
+    //if red is higher than green show lava
+    //else show result influenced by light
+    if(colorFrag.x > colorFrag.y){
+        color = vec4(colorFrag , 1.0f);
+    }
+    else
+        color = vec4(result, 1.0f);
 
-
-//    if(colorFrag.x == 0.0f){
-//        color = vec4(result, 1.0f);
-//    } else if(colorFrag.y > colorFrag.x){
-//         color = vec4(result, 1.0f);
-//    } else{
-//        color = vec4(colorFrag , 1.0f);
-//    }
 }
