@@ -240,10 +240,10 @@ int main(){
          glBindTexture(GL_TEXTURE_2D, specularMap);
 
          glm::mat4 volcanModel;
+         volcanModel = glm::rotate(volcanModel, anglePitch, glm::vec3(1.0f, 0.0f, 0.0f));
+         volcanModel = glm::rotate(volcanModel, angleYao, glm::vec3(0.0f, 1.0f, 0.0f));
          volcanModel = glm::rotate(volcanModel, glm::degrees(90.0f), glm::vec3(0.0, 1.0, 0.0));
          volcanModel = glm::rotate(volcanModel, glm::degrees(180.0f), glm::vec3(0.0, 0.0, 1.0));
-         volcanModel = glm::rotate(volcanModel, anglePitch, glm::vec3(1.0f, 0.0f, 0.0f));
-         volcanModel = glm::rotate(volcanModel, angleYao, glm::vec3(0.0f, 0.0f, 1.0f));
          volcanModel = glm::scale(volcanModel, glm::vec3(3.5f, 3.5f, 3.5f));
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
          glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
