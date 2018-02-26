@@ -122,22 +122,11 @@ int main(){
         GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat",true);
         GLfloat* lavaCoordinates = readFile("../dataset/lava.dat",false);
         GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat",false);
+
     GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
     GLfloat** lavaMatrix = createMatrix(lavaCoordinates,rows,cols);
-//    GLfloat** temperatureMatrix = createMatrix(temperatureCoordinates,rows,cols);
-
-    delete altitudeCoordinates;
-    delete lavaCoordinates;
 
     sumLava(altitudeMatrix,lavaMatrix);
-
-    //print matrix
-//    for(int i = 0; i<rows ;i++){
-//        for(int j=0; j<cols ;j++){
-//            std::cout<<altitudeMatrix[i][j]<<",";
-//        }
-//        std::cout<<endl;
-//    }
 
      vector<MyVertex> verticesCoordinates;
      GLfloat** matrixVertex = new GLfloat*[rows+1];
@@ -148,8 +137,6 @@ int main(){
      convertInMyVertex(verticesCoordinates,matrixVertex,temperatureCoordinates);
 
      cout<<"Vertex num:"<<verticesCoordinates.size()<<endl;
-//     for (auto v:verticesCoordinates)
-//         v.print();
      cout<<"Max altitude:"<<maxVal<<endl;
      cout<<"Min altitude:"<<minVal<<endl;
      cout<<"Max Temp:"<<maxTemp<<endl;
@@ -161,32 +148,12 @@ int main(){
      cout<<"index dim:"<<indexNum<<endl;
      GLint* indices = new GLint[indexNum];
      createIndex(indices,verticesCoordinates);
-//     for(int i = 0; i<indexNum ;i+=3){
-//         std::cout<<i/3<<" - "<<indices[i]
-//                  <<" , "<<indices[i+1]
-//                  <<" , "<<indices[i+2]<<endl;
-//     }
 
      computeNormal(verticesCoordinates,matrixVertex);
 
      Shader vulcan("../shaders/base.vs", "../shaders/base.frag");
-     Shader lamp("../shaders/light.vs", "../shaders/light.frag");
-
-     char pathSphere[] = "../model/sphere.obj";
-     Model modelSphere(pathSphere);
 
      GLfloat* vertexData = buildVBO(verticesCoordinates);
-//     for(int i=0;i<rows*cols*11;i+=11){
-//         for(int j=0;j<11;j++){
-//             if(j==0) cout<<"V:";
-//             if(j==3) cout<<"| N:";
-//             if(j==6) cout<<"| C:";
-//             if(j==9) cout<<"| T:";
-//            cout<<vertexData[i+j]<<"  ";
-//         }
-//         cout<<endl;
-//     }
-
 
      GLuint VAO,VBO,EBO;
      glGenVertexArrays(1, &VAO);
@@ -210,7 +177,6 @@ int main(){
      glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(9 * sizeof(GLfloat)));
      glEnableVertexAttribArray(3);
      glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
-
 
      // Load textures
      GLuint diffuseMap, specularMap;
@@ -260,18 +226,6 @@ int main(){
          glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
          glm::mat4 view = camera.GetViewMatrix();
 
-         // ================= Draw Lamp ===============
-//         lamp.Use();
-//         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-//         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-//         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-//         glm::mat4 lampModel;
-//         lampModel = glm::translate(lampModel, lightpos);
-//         lampModel = glm::scale(lampModel, glm::vec3(0.03f, 0.03f, 0.03f));
-//         glUniformMatrix4fv(glGetUniformLocation(lamp.Program, "model"), 1, GL_FALSE, glm::value_ptr(lampModel));
-//         modelSphere.Draw(lamp);
-//         glBindVertexArray(0);
-
          glUniform3f(glGetUniformLocation(vulcan.Program, "light.position"), camera.Front.x, camera.Front.y, -camera.Front.z);
          glUniform3f(glGetUniformLocation(vulcan.Program, "light.ambient"),  0.5f, 0.5f, 0.5f);
          glUniform3f(glGetUniformLocation(vulcan.Program, "light.diffuse"),  0.8f, 0.8f, 0.8f);
@@ -304,11 +258,14 @@ int main(){
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 
-//    destroyMatrix(altitudeMatrix);
-//    destroyMatrix(lavaMatrix);
-//    destroyMatrix(temperatureMatrix);
-//    delete vertexData;
-//    delete indices;
+    destroyMatrix(altitudeMatrix);
+    destroyMatrix(lavaMatrix);
+    destroyMatrix(matrixVertex);
+    delete vertexData;
+    delete indices;
+    delete altitudeCoordinates;
+    delete temperatureCoordinates;
+    delete lavaCoordinates;
 
     //EXIT LOOOP
     glfwTerminate();
@@ -616,7 +573,6 @@ void computeNormal(vector<MyVertex>& verticesCoordinates,GLfloat** matrix){
     for(int i=0;i<verticesCoordinates.size();i++){
         verticesCoordinates[i].normal = calculateNormal(matrix, verticesCoordinates[i].x()/cellSize , verticesCoordinates[i].z()/cellSize);
         verticesCoordinates[i].setTexCoord((verticesCoordinates[i].x()/cellSize)/(rows),(verticesCoordinates[i].z()/cellSize)/(cols));
-//                verticesCoordinates[i].setTexCoord(0.0,0.0);
         verticesCoordinates[i].normalizeCoord(minVal,maxVal);
     }
     cols--;

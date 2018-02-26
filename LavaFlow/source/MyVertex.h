@@ -21,14 +21,8 @@ class MyVertex {
 private:
     int pos;   //position in a vertex list
     GLfloat coord [3];
-//    vector<tuple<int,int>> connectedVertex;
-//    vector<tuple<GLfloat,GLfloat,GLfloat>> vert_normals;
     GLfloat color[3];
     GLfloat texCoord[2];
-
-//    void addNormal(tuple<GLfloat,GLfloat,GLfloat> t){
-//        vert_normals.push_back(t);
-//    }
 
 public:
     glm::vec3 normal;
@@ -49,49 +43,9 @@ public:
         texCoord[1] = v.texCoord[1];
     }
 
-//    glm::vec3 calculateFaceNormal(GLfloat p1[3], GLfloat p2[3],bool add){
-//        glm::vec3 curNormal;
-//        glm::vec3 vect;
-
-//        glm::vec3 _this = glm::vec3(coord[0],coord[1],coord[2]);
-//        glm::vec3 p1v = glm::vec3(p1[0],p1[1],p1[2]);
-//        glm::vec3 p2v = glm::vec3(p2[0],p2[1],p2[2]);
-
-//        // calculates vectors from this Vertex to p1
-//        // A(x1,y1,z1), B(x2,y2,z2)
-//        // V(AB) = (x2-x1, y2-y1, z2-z1)
-//        glm::vec3 u = p1v -_this;
-
-//        // calculates vectors from this Vertex to p2
-//        glm::vec3 v =  p2v -_this;
-
-//        // calculates vector at 90° to 2 vectors
-//        curNormal = glm::cross(v, u);
-
-//        // makes the vector length 1
-//        glm::normalize(curNormal);
-//        if(add)
-//            vert_normals.push_back(make_tuple(curNormal.x,curNormal.y,curNormal.z));
-//        return curNormal;
-//    }
-
-
     tuple<GLfloat,GLfloat,GLfloat> createTuple(GLfloat x, GLfloat y ,GLfloat z){
         make_tuple(x,y,z);
     }
-
-//    void calculateAverageNormal(){
-//        normal = glm::vec3(0.0f,0.0f,0.0f);
-//        for (int i = 0; i < vert_normals.size(); ++i) {
-//            normal = normal+glm::vec3(get<0>(vert_normals[i]),get<1>(vert_normals[i]),get<2>(vert_normals[i]));
-//        }
-//        //normal.x *= -1;
-//        if(normal.y > 0){
-//            normal.y *= -1;
-//        }
-//        //normal.z *= -1;
-//        glm::normalize(normal);
-//    }
 
     GLfloat* getCoord(){
         return this->coord;
@@ -117,14 +71,6 @@ public:
     void setPos(int pos){
         this->pos = pos;
     }
-
-//    void addConnectedVertex(int v1Index,int v2Index){
-//        connectedVertex.push_back(make_tuple(v1Index,v2Index));
-//    }
-
-//    vector<tuple<int,int>> getConnectedVertex(){
-//        return connectedVertex;
-//    }
 
     void computeColor(GLfloat maxTemp,GLfloat minTemp){
         if(temperature > 0.0f){
