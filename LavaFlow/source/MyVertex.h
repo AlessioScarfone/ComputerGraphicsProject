@@ -21,13 +21,14 @@ class MyVertex {
 private:
     int pos;   //position in a vertex list
     GLfloat coord [3];
-    vector<tuple<int,int>> connectedVertex;
-    vector<tuple<GLfloat,GLfloat,GLfloat>> vert_normals;
+//    vector<tuple<int,int>> connectedVertex;
+//    vector<tuple<GLfloat,GLfloat,GLfloat>> vert_normals;
     GLfloat color[3];
+    GLfloat texCoord[2];
 
-    void addNormal(tuple<GLfloat,GLfloat,GLfloat> t){
-        vert_normals.push_back(t);
-    }
+//    void addNormal(tuple<GLfloat,GLfloat,GLfloat> t){
+//        vert_normals.push_back(t);
+//    }
 
 public:
     glm::vec3 normal;
@@ -44,48 +45,53 @@ public:
             coord[i] = v.coord[i];
         pos = v.pos;
         temperature = v.temperature;
+        texCoord[0] = v.texCoord[0];
+        texCoord[1] = v.texCoord[1];
     }
 
-    glm::vec3 calculateFaceNormal(GLfloat p1[3], GLfloat p2[3],bool add){
-        glm::vec3 curNormal;
-        float vect[3];
-        // calculates vectors from this Vertex to p1
-        // A(x1,y1,z1), B(x2,y2,z2)
-        // V(AB) = (x2-x1, y2-y1, z2-z1)
-        for (int i=0;i<3;i++)
-            vect[i] = p1[i]-this->coord[i];
-        glm::vec3 u = glm::vec3(vect[0], vect[1], vect[2]);
+//    glm::vec3 calculateFaceNormal(GLfloat p1[3], GLfloat p2[3],bool add){
+//        glm::vec3 curNormal;
+//        glm::vec3 vect;
 
-        // calculates vectors from this Vertex to p2
-        for (int i=0;i<3;i++)
-            vect[i] = p2[i]-this->coord[i];
-        glm::vec3 v = glm::vec3(vect[0], vect[1], vect[2]);
+//        glm::vec3 _this = glm::vec3(coord[0],coord[1],coord[2]);
+//        glm::vec3 p1v = glm::vec3(p1[0],p1[1],p1[2]);
+//        glm::vec3 p2v = glm::vec3(p2[0],p2[1],p2[2]);
 
-        // calculates vector at 90° to 2 vectors
-        curNormal = glm::cross(v, u);
+//        // calculates vectors from this Vertex to p1
+//        // A(x1,y1,z1), B(x2,y2,z2)
+//        // V(AB) = (x2-x1, y2-y1, z2-z1)
+//        glm::vec3 u = p1v -_this;
 
-        // makes the vector length 1
-        glm::normalize(curNormal);
-        if(add)
-            vert_normals.push_back(make_tuple(curNormal.x,curNormal.y,curNormal.z));
-        return curNormal;
-    }
+//        // calculates vectors from this Vertex to p2
+//        glm::vec3 v =  p2v -_this;
+
+//        // calculates vector at 90° to 2 vectors
+//        curNormal = glm::cross(v, u);
+
+//        // makes the vector length 1
+//        glm::normalize(curNormal);
+//        if(add)
+//            vert_normals.push_back(make_tuple(curNormal.x,curNormal.y,curNormal.z));
+//        return curNormal;
+//    }
 
 
     tuple<GLfloat,GLfloat,GLfloat> createTuple(GLfloat x, GLfloat y ,GLfloat z){
         make_tuple(x,y,z);
     }
 
-    void calculateAverageNormal(){
-        normal = glm::vec3(0.0f,0.0f,0.0f);
-        for (int i = 0; i < vert_normals.size(); ++i) {
-            normal = normal+glm::vec3(get<0>(vert_normals[i]),get<1>(vert_normals[i]),get<2>(vert_normals[i]));
-        }
-        // normal.x *= -1;
-//         normal.y *= -1;
-        // normal.z *= -1;
-        glm::normalize(normal);
-    }
+//    void calculateAverageNormal(){
+//        normal = glm::vec3(0.0f,0.0f,0.0f);
+//        for (int i = 0; i < vert_normals.size(); ++i) {
+//            normal = normal+glm::vec3(get<0>(vert_normals[i]),get<1>(vert_normals[i]),get<2>(vert_normals[i]));
+//        }
+//        //normal.x *= -1;
+//        if(normal.y > 0){
+//            normal.y *= -1;
+//        }
+//        //normal.z *= -1;
+//        glm::normalize(normal);
+//    }
 
     GLfloat* getCoord(){
         return this->coord;
@@ -112,19 +118,19 @@ public:
         this->pos = pos;
     }
 
-    void addConnectedVertex(int v1Index,int v2Index){
-        connectedVertex.push_back(make_tuple(v1Index,v2Index));
-    }
+//    void addConnectedVertex(int v1Index,int v2Index){
+//        connectedVertex.push_back(make_tuple(v1Index,v2Index));
+//    }
 
-    vector<tuple<int,int>> getConnectedVertex(){
-        return connectedVertex;
-    }
+//    vector<tuple<int,int>> getConnectedVertex(){
+//        return connectedVertex;
+//    }
 
     void computeColor(GLfloat maxTemp,GLfloat minTemp){
         if(temperature > 0.0f){
              GLfloat redVal = (temperature - minTemp) / (maxTemp - minTemp);
              color[0] = 1.0f;
-             color[1] = (y()*y())*(redVal);
+             color[1] = redVal;
              color[2] = 0.0f;
 //             cout<<"RED VALUE:"<<color[0]<<" GREEN VALUE:"<<color[1]<<endl;
         }
@@ -139,7 +145,7 @@ public:
 
 
     void print(){
-        cout<<"v: ("<<x()<<","<<y()<<","<<z()<<")"<<endl;
+        cout<<"v:"<<pos<<" ("<<x()<<","<<y()<<","<<z()<<")"<<endl;
     }
 
     void printComplete(){
@@ -158,7 +164,15 @@ public:
         for(int i = 0; i < 3; i++){
             line.push_back(color[i]);
         }
+        for(int i = 0; i < 2; i++){
+            line.push_back(texCoord[i]);
+        }
         return line;
+    }
+
+    void setTexCoord(GLfloat c1,GLfloat c2){
+        texCoord[0]=c1;
+        texCoord[1]=c2;
     }
 
 };
