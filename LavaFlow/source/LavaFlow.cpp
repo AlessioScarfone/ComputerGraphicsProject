@@ -32,7 +32,7 @@ GLuint screenWidth = 1424;
 GLuint screenHeight = 1000;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+//void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
@@ -40,7 +40,7 @@ GLfloat *readFile(char* path,bool checkNoValue);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
 void createVertex(GLfloat** matrixVertex, GLfloat ** coordinates);
 void sumLava(GLfloat** altitudeMatrix,GLfloat** lavaMatrix);
-void createIndex(GLint* indices, vector<MyVertex>& verticesCoordinates);
+void createIndex(GLint* indices);
 glm::vec3 calculateNormal(GLfloat** matrix, int i, int j);
 void computeNormal(vector<MyVertex>& verticesCoordinates,GLfloat** matrix);
 void updateMaxAndMin(MyVertex v);
@@ -52,7 +52,7 @@ void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVer
 void destroyMatrix(GLfloat** matrix);
 
 // _________Camera _________
-Camera camera(glm::vec3(-0.5f, 1.0f, 2.0f));
+Camera camera(glm::vec3(-2.5f, 1.0f, 4.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -136,18 +136,18 @@ int main(){
      createVertex(matrixVertex, altitudeMatrix);
      convertInMyVertex(verticesCoordinates,matrixVertex,temperatureCoordinates);
 
-     cout<<"Vertex num:"<<verticesCoordinates.size()<<endl;
-     cout<<"Max altitude:"<<maxVal<<endl;
-     cout<<"Min altitude:"<<minVal<<endl;
-     cout<<"Max Temp:"<<maxTemp<<endl;
-     cout<<"Min Temp:"<<minTemp<<endl;
+//     cout<<"Vertex num:"<<verticesCoordinates.size()<<endl;
+//     cout<<"Max altitude:"<<maxVal<<endl;
+//     cout<<"Min altitude:"<<minVal<<endl;
+//     cout<<"Max Temp:"<<maxTemp<<endl;
+//     cout<<"Min Temp:"<<minTemp<<endl;
 
      int neededTriangles = (rows)*(cols)*2; //r*n square, each composed by 2 triangles
-     cout<<"needed triangles:"<<neededTriangles<<endl;
+//     cout<<"needed triangles:"<<neededTriangles<<endl;
      int indexNum = neededTriangles * 3; //r*c square,* 2 triangle , * 3 coord
-     cout<<"index dim:"<<indexNum<<endl;
+//     cout<<"index dim:"<<indexNum<<endl;
      GLint* indices = new GLint[indexNum];
-     createIndex(indices,verticesCoordinates);
+     createIndex(indices);
 
      computeNormal(verticesCoordinates,matrixVertex);
 
@@ -195,19 +195,20 @@ int main(){
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
      // Specular map
-     glBindTexture(GL_TEXTURE_2D, specularMap);
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-     glGenerateMipmap(GL_TEXTURE_2D);
-     SOIL_free_image_data(image);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-     glBindTexture(GL_TEXTURE_2D, 0);
+//     glBindTexture(GL_TEXTURE_2D, specularMap);
+//     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+//     glGenerateMipmap(GL_TEXTURE_2D);
+//     SOIL_free_image_data(image);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+//     glBindTexture(GL_TEXTURE_2D, 0);
 
      vulcan.Use();
      glUniform1i(glGetUniformLocation(vulcan.Program, "material.diffuse"),  0);
-     glUniform1i(glGetUniformLocation(vulcan.Program, "material.specular"), 1);
+//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.specular"), 1);
+//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.shininess"), 32);
 
      cout<<"..:: RENDER ::.."<<endl;
 
@@ -236,14 +237,14 @@ int main(){
 
          glActiveTexture(GL_TEXTURE0);
          glBindTexture(GL_TEXTURE_2D, diffuseMap);
-         glActiveTexture(GL_TEXTURE1);
-         glBindTexture(GL_TEXTURE_2D, specularMap);
+//         glActiveTexture(GL_TEXTURE1);
+//         glBindTexture(GL_TEXTURE_2D, specularMap);
 
          glm::mat4 volcanModel;
-         volcanModel = glm::rotate(volcanModel, anglePitch, glm::vec3(1.0f, 0.0f, 0.0f));
+         volcanModel = glm::rotate(volcanModel, anglePitch, glm::vec3(0.0f, 0.0f, 1.0f));
          volcanModel = glm::rotate(volcanModel, angleYao, glm::vec3(0.0f, 1.0f, 0.0f));
-         volcanModel = glm::rotate(volcanModel, glm::degrees(90.0f), glm::vec3(0.0, 1.0, 0.0));
-         volcanModel = glm::rotate(volcanModel, glm::degrees(180.0f), glm::vec3(0.0, 0.0, 1.0));
+
+         volcanModel = glm::rotate(volcanModel, 3.0f, glm::vec3(0.0, 0.0, 1.0));
          volcanModel = glm::scale(volcanModel, glm::vec3(3.5f, 3.5f, 3.5f));
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "model"), 1, GL_FALSE, glm::value_ptr(volcanModel));
          glDrawElements(GL_TRIANGLES, indexNum, GL_UNSIGNED_INT, 0);
@@ -309,10 +310,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 }
 
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
-}
+//void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+//{
+//    camera.ProcessMouseScroll(yoffset);
+//}
 
 // Moves/alters the camera positions based on user input
 void Do_Movement()
@@ -467,12 +468,12 @@ void createVertex(GLfloat** matrixVertex, GLfloat ** coordinates){
 
 
 
-void createIndex(GLint* indices,vector<MyVertex> &verticesCoordinates){
+void createIndex(GLint* indices){
     int newcols=cols+1;
     int newrows=rows+1;
     int index = 0;
     int it = (newrows*newcols)-newcols;
-    cout<<"iteration:"<<it<<endl;
+//    cout<<"iteration:"<<it<<endl;
     for(int i = 0; i < it; i++){
         if(i%newcols == cols){     //skip last col
 //            cout<<i<<" skip"<<endl;
