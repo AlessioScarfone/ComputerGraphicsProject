@@ -17,5 +17,5 @@ make
 ## Walking 
 ![Walking_img](Walking_img.png) 
 
-## Particles 
+## Lava Flow
 ![Lava_img](Lava_img.png) 
