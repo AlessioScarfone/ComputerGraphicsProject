@@ -9,7 +9,7 @@ cmake ..
 make
 ./${project_exe}
 
-```bash
+```
 
 ## Particles 
 ![Particles_img](Particles_img.png) 
