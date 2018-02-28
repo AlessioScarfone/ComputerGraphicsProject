@@ -28,8 +28,8 @@
 
 using namespace std;
 
-GLuint screenWidth = 1424;
-GLuint screenHeight = 1000;
+GLuint screenWidth = 1400;
+GLuint screenHeight = 900;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 //void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);

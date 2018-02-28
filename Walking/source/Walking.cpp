@@ -25,8 +25,8 @@
 #include <SOIL/SOIL.h>
 
 
-GLuint screenWidth = 1024;
-GLuint screenHeight = 800;
+GLuint screenWidth = 1400;
+GLuint screenHeight = 900;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);

@@ -25,8 +25,8 @@
 #include <SOIL/SOIL.h>
 
 
-GLuint screenWidth = 1024;
-GLuint screenHeight = 800;
+GLuint screenWidth = 1400;
+GLuint screenHeight = 900;
 
 int sphere_number = 2000;
 float range = 0.29;
