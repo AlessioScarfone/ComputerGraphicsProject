@@ -11,11 +11,11 @@ make
 
 ```
 
-### Particles 
+## Particles 
 ![Particles_img](Particles_img.png) 
 
-### Walking 
+## Walking 
 ![Walking_img](Walking_img.png) 
 
-### Particles 
+## Particles 
 ![Lava_img](Lava_img.png) 
