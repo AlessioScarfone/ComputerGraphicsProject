@@ -34,6 +34,8 @@ void Do_Movement(glm::vec3 spherePos[]);
 float getRandomInRange(float min,float max);
 void checkposition(glm::vec3 &spherePos, GLfloat move);
 void initSpherePosition(glm::vec3 spherePos[]);
+void reset(glm::vec3 spherePos[]);
+void resetCamera();
 
 
 int sphere_number = 2000;

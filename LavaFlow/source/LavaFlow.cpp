@@ -28,8 +28,8 @@
 
 using namespace std;
 
-GLuint screenWidth = 1400;
-GLuint screenHeight = 900;
+GLuint screenWidth = 1450;
+GLuint screenHeight = 920;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 //void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -38,16 +38,16 @@ void Do_Movement();
 
 GLfloat *readFile(char* path,bool checkNoValue);
 GLfloat** createMatrix(GLfloat* input, int r, int c);
-void createVertex(GLfloat** matrixVertex, GLfloat ** coordinates);
 void sumLava(GLfloat** altitudeMatrix,GLfloat** lavaMatrix);
+GLfloat checkNoValue(GLfloat** matrixVertex, int i, int j, int novalue);
+void createVertex(GLfloat** matrixVertex, GLfloat** altitudeMatrix);
+void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVertex,GLfloat* temperatureData);
 void createIndex(GLint* indices);
 glm::vec3 calculateNormal(GLfloat** matrix, int i, int j);
 void computeNormal(vector<MyVertex>& verticesCoordinates,GLfloat** matrix);
 void updateMaxAndMin(MyVertex v);
 GLfloat* buildVBO(vector<MyVertex>& verticesCoordinates);
 GLfloat normalizeNumber(GLfloat val);
-
-void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVertex,GLfloat* temperatureCoordinates);
 
 void destroyMatrix(GLfloat** matrix);
 
@@ -62,11 +62,11 @@ GLfloat lastFrame = 0.0f;
 float anglePitch = 0.0f;
 float angleYao = 0.0f;
 
-GLfloat maxVal = -100000;
-GLfloat minVal = 100000;
+GLfloat maxVal = -1000000;
+GLfloat minVal = 1000000;
 
 GLfloat maxTemp = 0.0f;
-GLfloat minTemp = 10000.0f;
+GLfloat minTemp = 1000000.0f;
 // _________________________
 
 // _________ Light _________
@@ -99,7 +99,7 @@ int main(){
 
     glewExperimental = GL_TRUE;
     if(glewInit() != GLEW_OK){
-        std::cout<<"FAIL TO INIZIALIZA GLEW"<<std::endl;
+        std::cout<<"FAIL TO INIT GLEW"<<std::endl;
         return -1;
     }
 
@@ -115,26 +115,31 @@ int main(){
 
     // ----- END CONFIGURATION OPENGL AND WINDOW ----
 
-//    GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat",true); //TEST
+    //----------------  TEST DataSet -----------------------------------------------
+//    GLfloat* altitudeCoordinates = readFile("../dataset/test/DEM_test.dat",true);
 //    GLfloat* lavaCoordinates = readFile("../dataset/test/lava_test.dat",false);
 //    GLfloat* temperatureCoordinates = readFile("../dataset/test/temperature_test.dat",false);
+    //----------------  TEST DataSet -----------------------------------------------
 
-    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat",true);
-    GLfloat* lavaCoordinates = readFile("../dataset/lava.dat",false);
-    GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat",false);
+    GLfloat* altitudeReadInput = readFile("../dataset/altitudes.dat",true);
+    GLfloat* lavaReadInput = readFile("../dataset/lava.dat",false);
+    GLfloat* temperatureReadInput = readFile("../dataset/temperature.dat",false);
 
-    GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
-    GLfloat** lavaMatrix = createMatrix(lavaCoordinates,rows,cols);
+    GLfloat** altitudeMatrix = createMatrix(altitudeReadInput,rows,cols);
+    GLfloat** lavaMatrix = createMatrix(lavaReadInput,rows,cols);
 
     sumLava(altitudeMatrix,lavaMatrix);
 
-     vector<MyVertex> verticesCoordinates;
-     GLfloat** matrixVertex = new GLfloat*[rows+1];
-     for (int i = 0; i < rows+1; ++i)
-         matrixVertex[i] = new GLfloat[cols+1];
+    //Create vertex Matrix
+    GLfloat** matrixVertex = new GLfloat*[rows+1];
+    for (int i = 0; i < rows+1; ++i)
+        matrixVertex[i] = new GLfloat[cols+1];
 
-     createVertex(matrixVertex, altitudeMatrix);
-     convertInMyVertex(verticesCoordinates,matrixVertex,temperatureCoordinates);
+    //Fill Vertex Matrix
+    createVertex(matrixVertex, altitudeMatrix);
+    //Create vertex object
+    vector<MyVertex> verticesCoordinates;
+    convertInMyVertex(verticesCoordinates,matrixVertex,temperatureReadInput);
 
 //     cout<<"Vertex num:"<<verticesCoordinates.size()<<endl;
 //     cout<<"Max altitude:"<<maxVal<<endl;
@@ -151,7 +156,7 @@ int main(){
 
      computeNormal(verticesCoordinates,matrixVertex);
 
-     Shader vulcan("../shaders/base.vs", "../shaders/base.frag");
+     Shader vulcan("../shaders/vulcan.vs", "../shaders/vulcan.frag");
 
      GLfloat* vertexData = buildVBO(verticesCoordinates);
 
@@ -188,19 +193,17 @@ int main(){
      glBindTexture(GL_TEXTURE_2D, diffuseMap);
      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
      glGenerateMipmap(GL_TEXTURE_2D);
-     //   SOIL_free_image_data(image);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+     SOIL_free_image_data(image);
 
      vulcan.Use();
      glActiveTexture(GL_TEXTURE0);
      glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
      glUniform1i(glGetUniformLocation(vulcan.Program, "material.diffuse"),  0);
-//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.specular"), 0);
-//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.shininess"), 32);
 
      cout<<"..:: RENDER ::.."<<endl;
 
@@ -251,11 +254,10 @@ int main(){
     destroyMatrix(matrixVertex);
     delete vertexData;
     delete indices;
-    delete altitudeCoordinates;
-    delete temperatureCoordinates;
-    delete lavaCoordinates;
+    delete altitudeReadInput;
+    delete temperatureReadInput;
+    delete lavaReadInput;
 
-    //EXIT LOOOP
     glfwTerminate();
     return 0;
 }
@@ -362,7 +364,7 @@ GLfloat normalizeNumber(GLfloat val){ //in range [0,1]
     return newVal;
 }
 
-float checkNoValue(GLfloat** matrixVertex, int i, int j, int novalue){
+GLfloat checkNoValue(GLfloat** matrixVertex, int i, int j, int novalue){
     float height = 0;
     if(matrixVertex[i][j] != novalue){
         height = matrixVertex[i][j];
@@ -383,17 +385,67 @@ float checkNoValue(GLfloat** matrixVertex, int i, int j, int novalue){
     return height;
 }
 
-void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVertex, GLfloat* temperatureCoordinates){
+void createVertex(GLfloat** matrixVertex, GLfloat ** altitudeMatrix){
+    for (int i = 0; i < rows+1; ++i){
+        for (int j = 0; j < cols+1; j++){
+            if (i == 0 && j == 0){
+                matrixVertex[i][j] = checkNoValue(altitudeMatrix, i ,j, novalue);
+            } else if(i == 0) {
+                if(j<=(cols-1)){
+                    float h1,h2;
+                    h1 = checkNoValue(altitudeMatrix, i ,j-1, novalue);
+                    h2 = checkNoValue(altitudeMatrix, i ,j, novalue);
+                    matrixVertex[i][j] = (h1+h2)/2;
+                } else {
+                    matrixVertex[i][j] = checkNoValue(altitudeMatrix, i ,j-1, novalue);
+                }
+            } else if( (i == (rows))){
+                if(j == 0){
+                    matrixVertex[i][j] = checkNoValue(altitudeMatrix, i-1 ,j, novalue);
+                } else if( j == cols){
+                    matrixVertex[i][j] = checkNoValue(altitudeMatrix, i-1 ,j-1, novalue);
+                } else{
+                    float h1,h2;
+                    h1 = checkNoValue(altitudeMatrix, i-1 ,j-1, novalue);
+                    h2 = checkNoValue(altitudeMatrix, i-1 ,j, novalue);
+                    matrixVertex[i][j] = (h1+h2)/2;
+                }
+            } else {
+                if(j == 0){
+                    float h1,h2;
+                    h1 = checkNoValue(altitudeMatrix, i-1 ,j, novalue);
+                    h2 = checkNoValue(altitudeMatrix, i ,j, novalue);
+                    matrixVertex[i][j] = (h1+h2)/2;
+                } else if( j == cols){
+                    float h1,h2;
+                    h1 = checkNoValue(altitudeMatrix, i-1 ,j-1, novalue);
+                    h2 = checkNoValue(altitudeMatrix, i ,j-1, novalue);
+                    matrixVertex[i][j] = (h1+h2)/2;
+
+                } else {
+                    float h1,h2,h3,h4;
+                    h1 = checkNoValue(altitudeMatrix, i ,j-1, novalue);
+                    h2 = checkNoValue(altitudeMatrix, i ,j, novalue);
+                    h3 = checkNoValue(altitudeMatrix, i-1 ,j, novalue);
+                    h4 = checkNoValue(altitudeMatrix, i-1 ,j-1, novalue);
+                    matrixVertex[i][j] = (h1+h2+h3+h4)/4;
+                }
+            }
+        }
+    }
+}
+
+
+void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVertex, GLfloat* temperatureData){
     int count=0;
     for(int i=0; i<rows+1; i++){
         for(int j=0; j<cols+1; j++){
             MyVertex v(i*cellSize,-matrixVertex[i][j],j*cellSize);
             v.setPos(count++);
-            float temperature = temperatureCoordinates[(i*(cols)+j)];
+            float temperature = temperatureData[(i*(cols)+j)];
             v.temperature=temperature;
             updateMaxAndMin(v);
             verticesCoordinates.push_back(v);
-
         }
     }
 
@@ -402,56 +454,6 @@ void convertInMyVertex(vector<MyVertex>& verticesCoordinates,GLfloat** matrixVer
         verticesCoordinates[i].computeColor(maxTemp,minTemp);
     }
 }
-
-void createVertex(GLfloat** matrixVertex, GLfloat ** coordinates){
-    for (int i = 0; i < rows+1; ++i){
-            for (int j = 0; j < cols+1; j++){
-                if (i == 0 && j == 0){
-                        matrixVertex[i][j] = checkNoValue(coordinates, i ,j, novalue);
-                } else if(i == 0) {
-                    if(j<=(cols-1)){
-                        float h1,h2;
-                        h1 = checkNoValue(coordinates, i ,j-1, novalue);
-                        h2 = checkNoValue(coordinates, i ,j, novalue);
-                        matrixVertex[i][j] = (h1+h2)/2;
-                    } else {
-                        matrixVertex[i][j] = checkNoValue(coordinates, i ,j-1, novalue);
-                    }
-                } else if( (i == (rows))){
-                    if(j == 0){
-                        matrixVertex[i][j] = checkNoValue(coordinates, i-1 ,j, novalue);
-                    } else if( j == cols){
-                        matrixVertex[i][j] = checkNoValue(coordinates, i-1 ,j-1, novalue);
-                    } else{
-                        float h1,h2;
-                        h1 = checkNoValue(coordinates, i-1 ,j-1, novalue);
-                        h2 = checkNoValue(coordinates, i-1 ,j, novalue);
-                        matrixVertex[i][j] = (h1+h2)/2;
-                    }
-                } else {
-                    if(j == 0){
-                        float h1,h2;
-                        h1 = checkNoValue(coordinates, i-1 ,j, novalue);
-                        h2 = checkNoValue(coordinates, i ,j, novalue);
-                        matrixVertex[i][j] = (h1+h2)/2;
-                    } else if( j == cols){
-                        float h1,h2;
-                        h1 = checkNoValue(coordinates, i-1 ,j-1, novalue);
-                        h2 = checkNoValue(coordinates, i ,j-1, novalue);
-                        matrixVertex[i][j] = (h1+h2)/2;
-
-                    } else {
-                        float h1,h2,h3,h4;
-                        h1 = checkNoValue(coordinates, i ,j-1, novalue);
-                        h2 = checkNoValue(coordinates, i ,j, novalue);
-                        h3 = checkNoValue(coordinates, i-1 ,j, novalue);
-                        h4 = checkNoValue(coordinates, i-1 ,j-1, novalue);
-                        matrixVertex[i][j] = (h1+h2+h3+h4)/4;
-                    }
-                }
-            }
-          }
-    }
 
 
 
