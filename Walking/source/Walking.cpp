@@ -25,8 +25,8 @@
 #include <SOIL/SOIL.h>
 
 
-GLuint screenWidth = 1400;
-GLuint screenHeight = 900;
+GLuint screenWidth = 1450;
+GLuint screenHeight = 920;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -425,15 +425,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     if(firstMouse)
     {
         lastX = xpos;
-//        lastY = ypos;
+        // lastY = ypos;
         firstMouse = false;
     }
     GLfloat xoffset = xpos - lastX;
-//    GLfloat yoffset = lastY - ypos;
+    //    GLfloat yoffset = lastY - ypos;
     GLfloat yoffset=0;
 
     lastX = xpos;
-//    lastY = ypos;
+    //    lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
 }

@@ -25,20 +25,21 @@
 #include <SOIL/SOIL.h>
 
 
-GLuint screenWidth = 1400;
-GLuint screenHeight = 900;
+GLuint screenWidth = 1450;
+GLuint screenHeight = 920;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void Do_Movement(glm::vec3 spherePos[]);
+float getRandomInRange(float min,float max);
+void checkposition(glm::vec3 &spherePos, GLfloat move);
+void initSpherePosition(glm::vec3 spherePos[]);
+
 
 int sphere_number = 2000;
 float range = 0.29;
 GLfloat maxDimension = 0.95f;
 bool moveON = false;
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void Do_Movement();
-float getRandomInRange(float min,float max);
-void checkposition(glm::vec3 &spherePos, GLfloat move);
-
 // _________Camera _________
 Camera camera(glm::vec3(0.0f, 0.0f, 3.2f));
 bool keys[1024];
@@ -51,7 +52,7 @@ GLfloat lastFrame = 0.0f;
 // _________ Light _________
 glm::vec3 lightPos(0.0f, 0.0f, 1.5f);
 glm::vec3 target(0.0f, 0.0f, -10.0f);
-glm::vec3 lightDir =  target - lightPos   ;
+glm::vec3 lightDir =  target - lightPos;
 
 bool rotationON=false;
 GLfloat rotationY=0.0f;
@@ -81,7 +82,7 @@ int main(){
 
     glewExperimental = GL_TRUE;
     if(glewInit() != GLEW_OK){
-        std::cout<<"FAIL TO INIZIALIZA GLEW"<<std::endl;
+        std::cout<<"FAIL TO INIT GLEW"<<std::endl;
         return -1;
     }
 
@@ -96,13 +97,9 @@ int main(){
 
     //create starting position of spheres
     glm::vec3 spherePos[sphere_number];
-    for(int i=0; i < sphere_number;i++){
-        float randX= getRandomInRange(-range,range);
-        float randY= getRandomInRange(-range,range);
-        float randZ= getRandomInRange(-range,range);
-//        std::cout<<i<<": "<<randX<<","<<randY<<","<<randZ<<endl;
-        spherePos[i] = glm::vec3(randX,randY,randZ);
-    }
+
+
+    initSpherePosition(spherePos);
 
 
     Shader smallCubeShader("../shaders/smallCube.vs", "../shaders/smallCube.frag");
@@ -243,7 +240,7 @@ int main(){
 
         //checks if any event are triggered
         glfwPollEvents();
-        Do_Movement();
+        Do_Movement(spherePos);
 
         //Render
         //Clear the colorbuffer
@@ -259,7 +256,7 @@ int main(){
         glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
         glm::mat4 modelSmallCube;
-        modelSmallCube = glm::translate(modelSmallCube, glm::vec3(0.0f, 0.0f, 0.0f));
+//        modelSmallCube = glm::translate(modelSmallCube, glm::vec3(0.0f, 0.0f, 0.0f));
         glUniformMatrix4fv(glGetUniformLocation(smallCubeShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelSmallCube));
 
         glBindVertexArray(smallCubeVAO);
@@ -410,7 +407,34 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 //            std::cout<<"_________________________________________________________________________"<<endl;
 //}
 
-void Do_Movement()
+void initSpherePosition(glm::vec3 spherePos[]){
+    for(int i=0; i < sphere_number;i++){
+        float randX= getRandomInRange(-range,range);
+        float randY= getRandomInRange(-range,range);
+        float randZ= getRandomInRange(-range,range);
+//        std::cout<<i<<": "<<randX<<","<<randY<<","<<randZ<<endl;
+        spherePos[i] = glm::vec3(randX,randY,randZ);
+    }
+}
+
+void reset(glm::vec3 spherePos[]){
+    //reset sphere pos
+    initSpherePosition(spherePos);
+    //stop sphere
+    moveON=false;
+    //reset light pos
+    lightPos = glm::vec3(0.0f, 0.0f, 1.5f);
+    target = glm::vec3 (0.0f, 0.0f, -10.0f);
+    lightDir =  target - lightPos;
+    lamp_self_rotate=0.0f;
+}
+
+void resetCamera(){
+    //reset camera
+    camera = Camera(glm::vec3(0.0f, 0.0f, 3.2f));
+}
+
+void Do_Movement(glm::vec3 spherePos[])
 {
     // Camera controls
     if(keys[GLFW_KEY_W])
@@ -426,6 +450,12 @@ void Do_Movement()
             moveON=true;
     if(keys[GLFW_KEY_Z])
             moveON=false;
+    if(keys[GLFW_KEY_R] && keys[GLFW_KEY_LEFT_SHIFT]){
+            reset(spherePos);
+    }
+    if(keys[GLFW_KEY_C] && keys[GLFW_KEY_LEFT_SHIFT]){
+            resetCamera();
+    }
     //------Light controll ------------
     //rotation up and down
 //    if(keys[GLFW_KEY_UP]){
