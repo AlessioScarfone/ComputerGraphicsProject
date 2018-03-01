@@ -179,9 +179,8 @@ int main(){
      glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
 
      // Load textures
-     GLuint diffuseMap, specularMap;
+     GLuint diffuseMap;
      glGenTextures(1, &diffuseMap);
-     glGenTextures(1, &specularMap);
      int width, height;
      unsigned char* image;
      // Diffuse map
@@ -194,20 +193,13 @@ int main(){
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-     // Specular map
-//     glBindTexture(GL_TEXTURE_2D, specularMap);
-//     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-//     glGenerateMipmap(GL_TEXTURE_2D);
-//     SOIL_free_image_data(image);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-//     glBindTexture(GL_TEXTURE_2D, 0);
 
      vulcan.Use();
+     glActiveTexture(GL_TEXTURE0);
+     glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
      glUniform1i(glGetUniformLocation(vulcan.Program, "material.diffuse"),  0);
-//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.specular"), 1);
+//     glUniform1i(glGetUniformLocation(vulcan.Program, "material.specular"), 0);
 //     glUniform1i(glGetUniformLocation(vulcan.Program, "material.shininess"), 32);
 
      cout<<"..:: RENDER ::.."<<endl;
@@ -234,11 +226,6 @@ int main(){
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
          glUniformMatrix4fv(glGetUniformLocation(vulcan.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
          glBindVertexArray(VAO);
-
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GL_TEXTURE_2D, diffuseMap);
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, specularMap);
 
          glm::mat4 volcanModel;
          volcanModel = glm::rotate(volcanModel, anglePitch, glm::vec3(0.0f, 0.0f, 1.0f));
