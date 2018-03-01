@@ -119,9 +119,9 @@ int main(){
 //    GLfloat* lavaCoordinates = readFile("../dataset/test/lava_test.dat",false);
 //    GLfloat* temperatureCoordinates = readFile("../dataset/test/temperature_test.dat",false);
 
-        GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat",true);
-        GLfloat* lavaCoordinates = readFile("../dataset/lava.dat",false);
-        GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat",false);
+    GLfloat* altitudeCoordinates = readFile("../dataset/altitudes.dat",true);
+    GLfloat* lavaCoordinates = readFile("../dataset/lava.dat",false);
+    GLfloat* temperatureCoordinates = readFile("../dataset/temperature.dat",false);
 
     GLfloat** altitudeMatrix = createMatrix(altitudeCoordinates,rows,cols);
     GLfloat** lavaMatrix = createMatrix(lavaCoordinates,rows,cols);
@@ -333,10 +333,10 @@ void Do_Movement()
     }
     // Camera rotation
     if(keys[GLFW_KEY_UP]){
-      anglePitch += 0.01f;
+      anglePitch -= 0.01f;
     }
     if(keys[GLFW_KEY_DOWN]){
-      anglePitch -= 0.01f;
+      anglePitch += 0.01f;
     }
     if(keys[GLFW_KEY_RIGHT]){
       angleYao += 0.01f;
