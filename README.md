@@ -1,5 +1,7 @@
 # Computer Graphics Project
 
+Useful resource for OpenGL: https://learnopengl.com/
+
 Build a project:
 ```
 cd ${project_folder}
